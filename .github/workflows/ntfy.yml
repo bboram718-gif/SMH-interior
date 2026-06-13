@@ -1,54 +1,48 @@
-name: SMH ntfy 알림
+name: SMH ntfy alerts
 
 on:
-schedule:
-- cron: '0 21 * * *'
-- cron: '*/5 * * * *'
-workflow_dispatch:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *"
+    - cron: "*/5 * * * *"
 
 jobs:
-morning-alert:
-name: 아침 요약 알림
-runs-on: ubuntu-latest
-if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
+  morning_alert:
+    name: Morning summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-```
-steps:
-  - name: 코드 가져오기
-    uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-  - name: Node 준비
-    uses: actions/setup-node@v4
-    with:
-      node-version: '22'
+      - name: Run morning alert
+        env:
+          SHEET_API: ${{ secrets.SHEET_API }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
+        run: node ntfy_morning.js
 
-  - name: 아침 일정 요약 발송
-    env:
-      SHEET_API: ${{ secrets.SHEET_API }}
-      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-      SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
-    run: node ntfy_morning.js
-```
+  upcoming_alert:
+    name: Upcoming alert
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-upcoming-alert:
-name: 30분 전 알림
-runs-on: ubuntu-latest
-if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-```
-steps:
-  - name: 코드 가져오기
-    uses: actions/checkout@v4
-
-  - name: Node 준비
-    uses: actions/setup-node@v4
-    with:
-      node-version: '22'
-
-  - name: 30분 전 알림 실행
-    env:
-      SHEET_API: ${{ secrets.SHEET_API }}
-      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-      SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
-    run: node ntfy_upcoming.js
-```
+      - name: Run upcoming alert
+        env:
+          SHEET_API: ${{ secrets.SHEET_API }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
+        run: node ntfy_upcoming.js
