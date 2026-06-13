@@ -173,48 +173,46 @@ throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
 }
 
 const data = await fetchJson(SHEET_API);
-const rows = data["일정"] || [];
-const logs = data["알림로그"] || [];
+const rows = Array.isArray(data["일정"]) ? data["일정"] : [];
+const logs = Array.isArray(data["알림로그"]) ? data["알림로그"] : [];
 
 const now = kstNow();
 const today = ymd(now);
 
-const sentKeys = new Set(
-logs
-.map(function (l) {
-return String(l.key || l["key"] || "").trim();
-})
-.filter(Boolean)
-);
+const sentKeys = new Set();
 
-const timedEvents = rows.filter(function (r) {
-const date = normalizeDate(r["날짜"]);
-const time = normalizeTime(r["시간"]);
-const status = String(r["상태"] || "").trim();
-
-```
-return date === today && status !== "완료" && time;
-```
-
-});
+for (let i = 0; i < logs.length; i++) {
+const key = String(logs[i].key || logs[i]["key"] || "").trim();
+if (key) sentKeys.add(key);
+}
 
 let sentCount = 0;
+let checkedCount = 0;
 
-for (const r of timedEvents) {
-const date = normalizeDate(r["날짜"]);
-const timeStr = normalizeTime(r["시간"]);
+for (let i = 0; i < rows.length; i++) {
+const r = rows[i] || {};
 
 ```
-const parts = timeStr.split(":").map(Number);
-const hh = parts[0];
-const mm = parts[1];
+const date = normalizeDate(r["날짜"]);
+const timeStr = normalizeTime(r["시간"]);
+const status = String(r["상태"] || "").trim();
+
+if (date !== today) continue;
+if (status === "완료") continue;
+if (!timeStr) continue;
+
+checkedCount++;
+
+const parts = timeStr.split(":");
+const hh = Number(parts[0]);
+const mm = Number(parts[1]);
 
 if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
 
 const eventTime = new Date(now);
 eventTime.setHours(hh, mm, 0, 0);
 
-const diffMin = (eventTime - now) / 60000;
+const diffMin = (eventTime.getTime() - now.getTime()) / 60000;
 
 // 현재 기준 25~35분 뒤 일정만 알림
 if (diffMin < 25 || diffMin > 35) continue;
@@ -290,7 +288,7 @@ sentCount++;
 
 }
 
-console.log("30분 전 알림 체크 완료. 발송 " + sentCount + "건.");
+console.log("30분 전 알림 체크 완료. 시간 있는 오늘 일정 " + checkedCount + "건 / 발송 " + sentCount + "건.");
 }
 
 main().catch(function (e) {
