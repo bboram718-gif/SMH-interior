@@ -2,8 +2,8 @@ name: SMH ntfy 알림
 
 on:
 schedule:
-- cron: '0 21 * * *'   # 매일 오전 6시 KST (= 전날 21:00 UTC)
-- cron: '*/5 * * * *'  # 5분마다 30분 전 알림
+- cron: '0 21 * * *'
+- cron: '*/5 * * * *'
 workflow_dispatch:
 
 jobs:
@@ -33,18 +33,15 @@ steps:
 uses: actions/checkout@v4
 
 ```
-  - name: 실행 파일 확인
+  - name: 현재 실행 파일 확인
     run: |
-      echo "현재 폴더:"
-      pwd
-      echo "파일 목록:"
-      ls -la
-      echo "현재 커밋:"
-      git rev-parse HEAD
+      echo "현재 커밋"
       git log -1 --oneline
-      echo "ntfy_upcoming.js 의심 구문 검색:"
-      grep -n "rows.filter\|requestWithRedirect\|timedEvents\|for (var i" ntfy_upcoming.js || true
-      echo "ntfy_upcoming.js 180~210줄:"
+      echo "파일 목록"
+      ls -la
+      echo "ntfy_upcoming.js 주요 구문"
+      grep -n "rows.filter\|requestWithRedirect\|for (var i" ntfy_upcoming.js || true
+      echo "ntfy_upcoming.js 180-210줄"
       nl -ba ntfy_upcoming.js | sed -n '180,210p'
 
   - name: 30분 전 알림 체크
