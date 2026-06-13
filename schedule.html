@@ -150,25 +150,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .search{width:100%;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;
   font-size:15px;background:var(--card);margin:8px 0 14px;font-family:inherit;color:var(--ink)}
 .search:focus{outline:none;border-color:var(--gold)}
-.cust{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:11px;overflow:hidden}
-.cust-top{padding:14px 16px 4px}
-.cust-name{font-size:16px;font-weight:600}
-.cust-meta{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.cust{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.cust-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px;user-select:none}
+.cust-header:active{background:var(--bg2)}
+.cust-info{min-width:0;flex:1}
+.cust-name{font-size:15px;font-weight:600}
+.cust-sub{font-size:12px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cust-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.site-move{background:none;border:none;padding:3px 6px;font-size:11px;color:var(--ink3);cursor:pointer;border-radius:4px;line-height:1}
+.site-move:hover:not(:disabled){color:var(--gold);background:var(--gold-bg)}
+.site-move:disabled{opacity:0.2;cursor:default}
+.cust-chevron{font-size:11px;color:var(--ink3);margin-left:4px;display:inline-block;transition:transform .2s}
+.cust.open .cust-chevron{transform:rotate(180deg)}
+.cust-body{border-top:1px solid var(--line);display:none;padding:0 0 10px}
+.cust-body.open{display:block}
 .site-note{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;
   font-size:13px;resize:vertical;font-family:inherit;color:var(--ink);background:var(--bg);
-  min-height:64px;margin-top:0;line-height:1.6;display:block}
+  min-height:64px;line-height:1.6;display:block}
 .site-note:focus{outline:none;border-color:var(--gold);background:#fff}
-.site-note-wrap{padding:6px 16px 12px}
-.cust-next{margin:8px 16px 4px;background:var(--gold-bg);border-radius:8px;padding:8px 11px;
-  font-size:13px;color:#7a5a08}
-.cust-next b{font-weight:600}
-.cust-core{padding:6px 16px 6px;font-size:13px;color:var(--ink2);line-height:1.6}
-.cust-recent{padding:0 16px 10px;font-size:12.5px;color:var(--ink3)}
-.cust-toggle{padding:9px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--gold);
-  cursor:pointer;font-weight:500;text-align:center}
-.cust-toggle:hover{background:#fcfbf8}
-.cust-body{border-top:1px solid var(--line);padding:6px 16px 13px;display:none}
-.cust-body.open{display:block}
+.site-note-wrap{padding:10px 14px 4px}
+.cust-ev-label{font-size:12px;color:var(--ink3);padding:8px 14px 2px;font-weight:500}
 .memo{font-size:13px;color:var(--ink2);line-height:1.6;padding:8px 0}
 .memo .ml{display:block;padding-left:12px;position:relative}
 .memo .ml:before{content:"·";position:absolute;left:2px;color:var(--gold)}
@@ -385,18 +386,12 @@ const SEED=[
 ];
 
 const SITE_INFO={
-  "필복싱":{customer:"",budget:"",core:"신내역점 부분 견적 / 레일 조명 + 샤워부스",next:"신내 전기·조명 공사 일정 확정",
-    memos:["짐 신내역점 부분 견적","기존 간접등 제거 / 레일 조명으로 조도 확보","샤워장 가벽 확장 후 샤워부스 최대 4개 / 호실별 사용 구조"]},
-  "성은교회":{customer:"",budget:"",core:"누수 보수 급선무 / 창고 분리·방수",next:"견적서 전달",
-    memos:["주차장~외부 공간 사용 희망","1차 누수 보수 급선무, 내부 창고 공간 분리 후 방수","창고 분리[도어] / 천장 보수 후 도장","조명 교체 / 페인트 손상부 보수","렉산·유리창 노후부 필름 정리, 알루미늄 프레임 유지","바닥 우레탄 도장 상태, 데코타일 등 시공 희망","주차장 셔터 철거 후 도어 정리 희망"]},
-  "조경민 대표":{customer:"조경민 대표",budget:"",core:"부천 빌라 보수 (6월 중순)",next:"보수 일정 잡기",
-    memos:["도어 손잡이/방문 스토퍼, 걸레받이 보수","내부 합지 도배 / 석고보드 파손부 보수","강화마루 조정 / 주방 오염부 교체","경첩 조정 및 보수"]},
-  "베티문 네일샵":{customer:"",budget:"수행비용 300",core:"단 25cm 올림 / 수납·상판 교체",next:"비교견적 2~3업체 확인",
-    memos:["기존 단 25cm 올림 (계단식, 의자쪽만)","수납 서랍형 제작, 비교견적 2~3업체","좌측장·우측장 둘다 기형장, 시공 공간 필요","콘센트 위치이동 / 스텐·대리석 상판 교체","5월 희망~7월 이내"]},
-  "신촌푸르지오 44A":{customer:"신애님",budget:"8000~1억",core:"개방감 / 따뜻한 화이트 · 9월 착공, 11월 입주",next:"예산별 마감재 옵션 정리",
-    memos:["4인가구(6세·2세) / 9월10일~ 2개월 / 11월 입주","개방감 있게, 따뜻한 화이트, 청소 적은 스타일","안방화장실 확장 욕조+건식+놀이공간 / 거실화장실 조적 샤워부스","가구: 세로 붙박이장, 안방 가로 붙박이장, 화장대 X","안방 놀이방 슬라이딩 도어 / 시스템 에어컨 단내림","주방 대면형 아일랜드, 세라믹 상판, 냉장고 2통","중문 개방감 / 원목마루 희망(예산 따라) / 디아망 느낌 도배"]},
-  "원복철거":{customer:"탑부동산",budget:"",core:"솔밭공원 옆 970평 전체 철거",next:"철거 범위 최종 확인",
-    memos:["솔밭공원 옆 970평 철거 (지하~4층, 이마트 제외 전체)","스프링쿨러·소방 기본배선 남기고 철거","메인 분전반 제외 전체 철거","B1~2층 엘베 유지 / 지하 펌프실·기계실 유지","외부 CCTV·이마트 설비 피해 최소화 / 바닥 전부 철거"]},
+  "필복싱":{customer:"",note:"짐 신내역점 부분 견적\n기존 간접등 제거 / 레일 조명으로 조도 확보\n샤워장 가벽 확장 후 샤워부스 최대 4개 / 호실별 사용 구조"},
+  "성은교회":{customer:"",note:"주차장~외부 공간 사용 희망\n1차 누수 보수 급선무, 내부 창고 공간 분리 후 방수\n창고 분리[도어] / 천장 보수 후 도장\n조명 교체 / 페인트 손상부 보수\n렉산·유리창 노후부 필름 정리, 알루미늄 프레임 유지\n바닥 우레탄 도장 상태, 데코타일 등 시공 희망\n주차장 셔터 철거 후 도어 정리 희망"},
+  "조경민 대표":{customer:"조경민 대표",note:"도어 손잡이/방문 스토퍼, 걸레받이 보수\n내부 합지 도배 / 석고보드 파손부 보수\n강화마루 조정 / 주방 오염부 교체\n경첩 조정 및 보수"},
+  "베티문 네일샵":{customer:"",note:"기존 단 25cm 올림 (계단식, 의자쪽만)\n수납 서랍형 제작, 비교견적 2~3업체\n좌측장·우측장 둘다 기형장, 시공 공간 필요\n콘센트 위치이동 / 스텐·대리석 상판 교체\n5월 희망~7월 이내"},
+  "신촌푸르지오 44A":{customer:"신애님",note:"4인가구(6세·2세) / 9월10일~ 2개월 / 11월 입주\n개방감 있게, 따뜻한 화이트, 청소 적은 스타일\n안방화장실 확장 욕조+건식+놀이공간 / 거실화장실 조적 샤워부스\n가구: 세로 붙박이장, 안방 가로 붙박이장, 화장대 X\n안방 놀이방 슬라이딩 도어 / 시스템 에어컨 단내림\n주방 대면형 아일랜드, 세라믹 상판, 냉장고 2통\n중문 개방감 / 원목마루 희망(예산 따라) / 디아망 느낌 도배"},
+  "원복철거":{customer:"탑부동산",note:"솔밭공원 옆 970평 철거 (지하~4층, 이마트 제외 전체)\n스프링쿨러·소방 기본배선 남기고 철거\n메인 분전반 제외 전체 철거\nB1~2층 엘베 유지 / 지하 펌프실·기계실 유지\n외부 CCTV·이마트 설비 피해 최소화 / 바닥 전부 철거"},
 };
 
 const TODO_STORE="smh_todos_v1";
@@ -487,9 +482,8 @@ async function syncFromSheet(){
     if(j.현장){
       j.현장.forEach(r=>{
         const s=rowToSite(r);if(!s.name)return;
-        const ex=SITE_INFO[s.name]||{memos:[]};
-        SITE_INFO[s.name]={customer:s.customer,budget:s.budget,core:s.core,next:s.next,
-          note:s.note||ex.note||"",memos:ex.memos||[]};
+        const ex=SITE_INFO[s.name]||{};
+        SITE_INFO[s.name]={customer:s.customer,note:s.note||ex.note||""};
       });
     }
     if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
@@ -537,7 +531,7 @@ function pushSitesToSheet(){
 }
 function saveNote(el){
   const name=el.dataset.site;
-  if(!SITE_INFO[name])SITE_INFO[name]={memos:[],note:""};
+  if(!SITE_INFO[name])SITE_INFO[name]={note:""};
   SITE_INFO[name].note=el.value;
   pushSitesToSheet();
 }
@@ -717,46 +711,65 @@ function findInfo(name){
   for(const k in SITE_INFO){if(name.includes(k)||k.includes(name))return SITE_INFO[k];}
   return null;
 }
+const SITE_ORDER_KEY="smh_site_order";
+function loadSiteOrder(){try{const s=localStorage.getItem(SITE_ORDER_KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
+function saveSiteOrder(order){localStorage.setItem(SITE_ORDER_KEY,JSON.stringify(order));}
+function moveSite(name,dir){
+  const allNames=[...new Set([...Object.keys(SITE_INFO),...Object.keys((() => {const m={};DATA.forEach(e=>{if(e.site)m[e.site]=1;});return m;})())])];
+  let order=loadSiteOrder()||[...allNames].sort();
+  allNames.forEach(n=>{if(!order.includes(n))order.push(n);});
+  order=order.filter(n=>allNames.includes(n));
+  const idx=order.indexOf(name);
+  if(idx<0)return;
+  if(dir==="up"&&idx>0){[order[idx-1],order[idx]]=[order[idx],order[idx-1]];}
+  else if(dir==="down"&&idx<order.length-1){[order[idx],order[idx+1]]=[order[idx+1],order[idx]];}
+  saveSiteOrder(order);
+  renderCust();
+}
 function renderCust(){
   const map={};
   DATA.forEach(e=>{if(!e.date)return;const k=e.site||"기타";(map[k]=map[k]||[]).push(e);});
-  const names=new Set([...Object.keys(map),...Object.keys(SITE_INFO)]);
+  const allNames=[...new Set([...Object.keys(map),...Object.keys(SITE_INFO)])];
+  let order=loadSiteOrder()||[...allNames].sort();
+  allNames.forEach(n=>{if(!order.includes(n))order.push(n);});
+  order=order.filter(n=>allNames.includes(n));
   const q=custQuery.trim().toLowerCase();
+  const filtered=q?order.filter(name=>{
+    const evs=map[name]||[];const info=findInfo(name);
+    return [name,info?.customer,info?.note,...evs.map(e=>e.desc+" "+e.memo)].join(" ").toLowerCase().includes(q);
+  }):order;
   let html=`<input class="search" id="custSearch" placeholder="현장명, 고객명, 메모 검색" value="${custQuery}">`;
-  let shown=0;
-  [...names].sort().forEach(name=>{
+  filtered.forEach((name,idx)=>{
     const evs=(map[name]||[]).sort((a,b)=>a.date<b.date?-1:1);
     const info=findInfo(name);
-    // 검색 필터
-    if(q){
-      const hay=[name,info?.customer,info?.core,info?.next,...(info?.memos||[]),
-        ...evs.map(e=>e.desc+" "+e.memo)].join(" ").toLowerCase();
-      if(!hay.includes(q))return;
-    }
-    shown++;
     const meta=info?.customer||"";
-    const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"없음";
+    const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"일정 없음";
     const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-    html+=`<div class="cust">
-      <div class="cust-top"><div class="cust-name">${name}</div>${meta?`<div class="cust-meta">${meta}</div>`:""}</div>
-      <div class="cust-recent">최근 일정: ${recent}</div>
-      <div class="site-note-wrap"><textarea class="site-note" data-site="${name.replace(/"/g,"&quot;")}" oninput="saveNote(this)" placeholder="현장 노트 (자유 기재 / 자동저장)">${noteVal}</textarea></div>`;
-    const hasMore=(info?.memos?.length)||evs.length;
-    if(hasMore){
-      html+=`<div class="cust-toggle" data-cust="${name}">상세 일정 보기 ▾</div>
-        <div class="cust-body" id="cb-${cssid(name)}">`;
-      if(info?.memos)html+=`<div class="memo">${info.memos.map(m=>`<span class="ml">${m}</span>`).join("")}</div>`;
-      if(evs.length){
-        html+=`<div style="font-size:12px;color:var(--ink3);margin:6px 0 0;font-weight:500">관련 일정</div>`;
-        evs.forEach(e=>{const t=e.time||"종일";
-          html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)} ${t}</span>
-            <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span></span></div>`;});
-      }
-      html+=`</div>`;
+    const ss=name.replace(/"/g,"&quot;");
+    const first=idx===0,last=idx===filtered.length-1;
+    html+=`<div class="cust" id="cust-${cssid(name)}">
+      <div class="cust-header" data-cust="${ss}">
+        <div class="cust-info">
+          <div class="cust-name">${name}</div>
+          <div class="cust-sub">${meta?meta+" · ":""}최근: ${recent}</div>
+        </div>
+        <div class="cust-actions">
+          <button class="site-move" data-dir="up" data-site="${ss}"${first?" disabled":""}>▲</button>
+          <button class="site-move" data-dir="down" data-site="${ss}"${last?" disabled":""}>▼</button>
+          <span class="cust-chevron">▾</span>
+        </div>
+      </div>
+      <div class="cust-body" id="cb-${cssid(name)}">
+        <div class="site-note-wrap"><textarea class="site-note" data-site="${ss}" oninput="saveNote(this)" placeholder="현장 노트 (자유 기재 / 자동저장)">${noteVal}</textarea></div>`;
+    if(evs.length){
+      html+=`<div class="cust-ev-label">관련 일정</div>`;
+      evs.forEach(e=>{const t=e.time||"종일";
+        html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)} ${t}</span>
+          <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span></span></div>`;});
     }
-    html+=`</div>`;
+    html+=`</div></div>`;
   });
-  if(!shown)html+=`<div class="empty">검색 결과가 없습니다</div>`;
+  if(!filtered.length)html+=`<div class="empty">검색 결과가 없습니다</div>`;
   V.innerHTML=html;
   const si=document.getElementById("custSearch");
   if(si){si.oninput=ev=>{custQuery=ev.target.value;const pos=si.selectionStart;renderCust();
@@ -888,10 +901,12 @@ V.addEventListener("click",e=>{
     at.querySelector("span").textContent=l.classList.contains("open")?"▴":"▾";return;}
   const wadd=e.target.closest(".wmemo-add");
   if(wadd){openModal(null,null,wadd.dataset.week);return;}
-  const ch=e.target.closest(".cust-toggle");
-  if(ch){const b=document.getElementById("cb-"+cssid(ch.dataset.cust));
-    b.classList.toggle("open");ch.textContent="상세 일정 보기 "+(b.classList.contains("open")?"▴":"▾");
-    ch.dataset.cust=ch.dataset.cust;return;}
+  const mv=e.target.closest(".site-move");
+  if(mv){e.stopPropagation();moveSite(mv.dataset.site,mv.dataset.dir);return;}
+  const ch=e.target.closest(".cust-header");
+  if(ch){const name=ch.dataset.cust;const card=document.getElementById("cust-"+cssid(name));
+    const b=document.getElementById("cb-"+cssid(name));
+    if(!b)return;b.classList.toggle("open");card.classList.toggle("open");return;}
   const dm=e.target.closest(".bmore");
   if(dm&&dm.dataset.day){openDay(dm.dataset.day);return;}
   const cell=e.target.closest(".bcell,.cell");
