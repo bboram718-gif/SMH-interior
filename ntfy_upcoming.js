@@ -168,6 +168,15 @@ eventTime.setHours(hh, mm, 0, 0);
 
 var diffMin = (eventTime.getTime() - now.getTime()) / 60000;
 
+console.log(
+  "검사:",
+  date,
+  time,
+  String(r["현장명"] || ""),
+  "남은분:",
+  Math.round(diffMin)
+);
+
 if (diffMin < 55 || diffMin > 65) continue;
 
 var site = String(r["현장명"] || "일정").trim();
