@@ -458,13 +458,11 @@ function eventToRow(e){
     "구분":e.kind||"기타","상태":e.status||"예정","메모":e.memo||"","주간":e.week||""};
 }
 function rowToSite(r){
-  return {name:String(r["현장명"]||""),customer:String(r["고객명"]||""),budget:String(r["예산"]||""),
-    stage:String(r["단계"]||""),next:String(r["다음할일"]||""),core:String(r["핵심메모"]||""),
+  return {name:String(r["현장명"]||""),customer:String(r["고객명"]||""),
     note:String(r["노트"]||"")};
 }
 function siteToRow(name,info){
-  return {"현장명":name,"고객명":info.customer||"","예산":info.budget||"","단계":info.stage||"",
-    "다음할일":info.next||"","핵심메모":info.core||"","노트":info.note||""};
+  return {"현장명":name,"고객명":info.customer||"","노트":info.note||""};
 }
 function rowToTodo(r){
   const subRaw=String(r["하위메모"]||"");
@@ -557,7 +555,7 @@ function render(){
   else if(view==="month")renderMonth();
   else renderCust();
   document.getElementById("bottomhint").textContent =
-    view==="cust"?"검색하거나, 상세 보기를 눌러 메모·일정을 펼칠 수 있어요":
+    view==="cust"?"검색하거나, 상세 일정 보기를 눌러 관련 일정을 펼칠 수 있어요":
     view==="board"?"날짜 칸을 누르면 그날 일정 추가 · 일정을 누르면 수정":
     view==="today"?"체크 버튼으로 바로 완료 처리할 수 있어요":
     view==="todo"?"체크하면 완료 · 날짜 잡기를 누르면 일정(달력)으로 올라갑니다":
@@ -736,18 +734,16 @@ function renderCust(){
       if(!hay.includes(q))return;
     }
     shown++;
-    const meta=[info?.customer,info?.budget?"예산 "+info.budget:""].filter(Boolean).join(" · ");
+    const meta=info?.customer||"";
     const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"없음";
     const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
     html+=`<div class="cust">
       <div class="cust-top"><div class="cust-name">${name}</div>${meta?`<div class="cust-meta">${meta}</div>`:""}</div>
-      ${info?.next?`<div class="cust-next"><b>다음 할 일:</b> ${info.next}</div>`:""}
-      ${info?.core?`<div class="cust-core">${info.core}</div>`:""}
       <div class="cust-recent">최근 일정: ${recent}</div>
       <div class="site-note-wrap"><textarea class="site-note" data-site="${name.replace(/"/g,"&quot;")}" oninput="saveNote(this)" placeholder="현장 노트 (자유 기재 / 자동저장)">${noteVal}</textarea></div>`;
     const hasMore=(info?.memos?.length)||evs.length;
     if(hasMore){
-      html+=`<div class="cust-toggle" data-cust="${name}">상세 보기 ▾</div>
+      html+=`<div class="cust-toggle" data-cust="${name}">상세 일정 보기 ▾</div>
         <div class="cust-body" id="cb-${cssid(name)}">`;
       if(info?.memos)html+=`<div class="memo">${info.memos.map(m=>`<span class="ml">${m}</span>`).join("")}</div>`;
       if(evs.length){
@@ -894,7 +890,7 @@ V.addEventListener("click",e=>{
   if(wadd){openModal(null,null,wadd.dataset.week);return;}
   const ch=e.target.closest(".cust-toggle");
   if(ch){const b=document.getElementById("cb-"+cssid(ch.dataset.cust));
-    b.classList.toggle("open");ch.textContent="상세 보기 "+(b.classList.contains("open")?"▴":"▾");
+    b.classList.toggle("open");ch.textContent="상세 일정 보기 "+(b.classList.contains("open")?"▴":"▾");
     ch.dataset.cust=ch.dataset.cust;return;}
   const dm=e.target.closest(".bmore");
   if(dm&&dm.dataset.day){openDay(dm.dataset.day);return;}
