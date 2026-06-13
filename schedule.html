@@ -1021,4 +1021,30 @@ function openModal(id,presetDate,presetWeek){
 function closeModal(){ov.classList.remove("show");}
 document.getElementById("addBtn").onclick=()=>openModal(null);
 document.getElementById("cancelBtn").onclick=()=>{promoteTodoId=null;closeModal();};
-ov.
+ov.onclick=e=>{if(e.target===ov)closeModal();};
+document.getElementById("saveBtn").onclick=()=>{
+  const g=x=>document.getElementById(x).value;
+  const date=g("fDate").trim();
+  const rec={date:date,time:g("fTime"),site:g("fSite").trim(),desc:g("fDesc").trim(),
+    kind:curKind,memo:g("fMemo").trim()};
+  if(!rec.site){alert("현장/고객명은 입력해 주세요");return;}
+  if(promoteTodoId&&!date){alert("일정으로 올리려면 날짜를 입력해 주세요");return;}
+  if(date){rec.week=null;}
+  else if(curWeek){rec.date="";rec.week=curWeek;}
+  else{alert("날짜를 입력하거나, 주간 메모로 추가해 주세요");return;}
+  if(editId){const ex=DATA.find(x=>x.id===editId);Object.assign(ex,rec);if(!ex.status)ex.status="예정";}
+  else{rec.id=Date.now();rec.status="예정";DATA.push(rec);}
+  save();
+  if(promoteTodoId){const t=TODOS.find(x=>x.id===promoteTodoId);if(t)t.promoted=true;saveTodos();promoteTodoId=null;}
+  closeModal();render();
+};
+document.getElementById("delBtn").onclick=()=>{
+  if(!confirm("이 일정을 삭제할까요?"))return;
+  DATA=DATA.filter(x=>x.id!==editId);save();closeModal();render();
+};
+
+render();
+syncFromSheet();
+</script>
+</body>
+</html>
