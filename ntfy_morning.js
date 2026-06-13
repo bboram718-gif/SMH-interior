@@ -1,7 +1,6 @@
 // SMH 아침 요약 알림 — GitHub Actions에서 실행
 // 환경변수: SHEET_API, NTFY_TOPIC
-// - SHEET_API 예: https://script.google.com/macros/s/xxxxx/exec
-// - NTFY_TOPIC 예: smh-schedule-bboram-718-kj92x6
+// 선택 환경변수: SMH_APP_URL
 
 function pad(n) {
 return String(n).padStart(2, "0");
@@ -47,7 +46,7 @@ pad(k.getUTCDate())
 }
 
 const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-if (m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+if (m) return m[1] + "-" + pad(m[2]) + "-" + pad(m[3]);
 
 return s.slice(0, 10);
 }
@@ -58,12 +57,12 @@ if (!value) return "";
 const s = String(value).trim();
 
 const m = s.match(/^(\d{1,2}):(\d{2})/);
-if (m) return `${pad(m[1])}:${pad(m[2])}`;
+if (m) return pad(m[1]) + ":" + pad(m[2]);
 
 const d = new Date(s);
 if (!Number.isNaN(d.getTime())) {
 const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return `${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
+return pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
 }
 
 return "";
@@ -76,12 +75,42 @@ return /^[\x00-\x7F]*$/.test(s)
 : "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
 }
 
+async function requestWithRedirect(url, options, maxRedirects) {
+let currentUrl = url;
+const limit = typeof maxRedirects === "number" ? maxRedirects : 5;
+
+for (let i = 0; i <= limit; i++) {
+const res = await fetch(currentUrl, {
+...options,
+redirect: "manual",
+});
+
+```
+const isRedirect =
+  res.status === 301 ||
+  res.status === 302 ||
+  res.status === 303 ||
+  res.status === 307 ||
+  res.status === 308;
+
+if (!isRedirect) return res;
+
+const location = res.headers.get("location");
+if (!location) return res;
+
+currentUrl = new URL(location, currentUrl).toString();
+```
+
+}
+
+throw new Error("리다이렉트가 너무 많습니다: " + url);
+}
+
 async function fetchJson(url) {
 const target = addQuery(url, "mode", "notificationData");
 
-const res = await fetch(target, {
+const res = await requestWithRedirect(target, {
 method: "GET",
-redirect: "follow",
 headers: {
 Accept: "application/json",
 "User-Agent": "SMH-ntfy-actions",
@@ -108,12 +137,11 @@ throw new Error("JSON parse 실패: " + text.slice(0, 500));
 }
 }
 
-async function postText(url, body, headers = {}) {
-const res = await fetch(url, {
+async function postText(url, body, headers) {
+const res = await requestWithRedirect(url, {
 method: "POST",
-redirect: "follow",
 body: String(body),
-headers,
+headers: headers || {},
 });
 
 const text = await res.text();
@@ -133,9 +161,8 @@ return { status: res.status, body: text };
 }
 
 async function postJson(url, obj) {
-const res = await fetch(url, {
+const res = await requestWithRedirect(url, {
 method: "POST",
-redirect: "follow",
 body: JSON.stringify(obj),
 headers: {
 "Content-Type": "application/json; charset=utf-8",
@@ -159,15 +186,15 @@ text.slice(0, 500)
 
 try {
 return JSON.parse(text);
-} catch {
+} catch (err) {
 return { ok: true, raw: text };
 }
 }
 
 async function main() {
-const SHEET_API = process.env.SHEET_API;
-const NTFY_TOPIC = process.env.NTFY_TOPIC;
-const SMH_APP_URL = process.env.SMH_APP_URL || "";
+const SHEET_API = String(process.env.SHEET_API || "").trim();
+const NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
+const SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
 
 if (!SHEET_API || !NTFY_TOPIC) {
 throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
@@ -183,27 +210,33 @@ const today = ymd(now);
 const morningKey = "morning_" + today;
 
 const sentKeys = new Set(
-logs.map((l) => String(l.key || l["key"] || "").trim()).filter(Boolean)
+logs
+.map(function (l) {
+return String(l.key || l["key"] || "").trim();
+})
+.filter(Boolean)
 );
 
 if (sentKeys.has(morningKey)) {
-console.log("이미 발송됨:", morningKey);
+console.log("이미 발송됨: " + morningKey);
 return;
 }
 
 const todayEvents = rows
-.filter((r) => {
+.filter(function (r) {
 const date = normalizeDate(r["날짜"]);
 const status = String(r["상태"] || "").trim();
 return date === today && status !== "완료";
 })
-.sort((a, b) => {
+.sort(function (a, b) {
 const ta = normalizeTime(a["시간"]) || "99:99";
 const tb = normalizeTime(b["시간"]) || "99:99";
-return ta > tb ? 1 : ta < tb ? -1 : 0;
+if (ta > tb) return 1;
+if (ta < tb) return -1;
+return 0;
 });
 
-const overdueEvents = rows.filter((r) => {
+const overdueEvents = rows.filter(function (r) {
 const date = normalizeDate(r["날짜"]);
 const status = String(r["상태"] || "").trim();
 return date && date < today && status !== "완료";
@@ -222,21 +255,23 @@ const titleParts = [];
 if (todayEvents.length) titleParts.push("오늘 " + todayEvents.length + "건");
 if (overdueEvents.length) titleParts.push("확인필요 " + overdueEvents.length + "건");
 
-const title = "SMH 오늘 일정 · " + todayLabel + " · " + titleParts.join(" · ");
+const title =
+"SMH 오늘 일정 · " + todayLabel + " · " + titleParts.join(" · ");
 
 const lines = [];
 
 if (todayEvents.length) {
 lines.push("📅 오늘 일정");
-todayEvents.forEach((r) => {
-const time = normalizeTime(r["시간"]);
-const timeLabel = time ? time + " " : "종일 ";
-const site = String(r["현장명"] || "").trim();
-const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-const kind = r["구분"] ? " [" + String(r["구분"]).trim() + "]" : "";
-const memo = r["메모"] ? " / " + String(r["메모"]).trim() : "";
 
 ```
+todayEvents.forEach(function (r) {
+  const time = normalizeTime(r["시간"]);
+  const timeLabel = time ? time + " " : "종일 ";
+  const site = String(r["현장명"] || "").trim();
+  const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
+  const kind = r["구분"] ? " [" + String(r["구분"]).trim() + "]" : "";
+  const memo = r["메모"] ? " / " + String(r["메모"]).trim() : "";
+
   lines.push(timeLabel + site + desc + kind + memo);
 });
 ```
@@ -250,7 +285,7 @@ lines.push("");
 lines.push("⚠️ 미완료 지난 일정 " + overdueEvents.length + "건");
 
 ```
-overdueEvents.slice(0, 5).forEach((r) => {
+overdueEvents.slice(0, 5).forEach(function (r) {
   const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
   const site = String(r["현장명"] || "").trim();
   const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
@@ -288,7 +323,7 @@ body,
 ntfyHeaders
 );
 
-console.log("ntfy 응답:", ntfyRes.status, title);
+console.log("ntfy 응답: " + ntfyRes.status + " / " + title);
 
 const logRes = await postJson(SHEET_API, {
 action: "appendNotificationLog",
@@ -296,16 +331,16 @@ log: {
 key: morningKey,
 type: "morning",
 date: today,
-title,
-body,
+title: title,
+body: body,
 },
 });
 
-console.log("로그 기록:", morningKey, JSON.stringify(logRes));
-console.log("아침 요약 알림 완료:", title);
+console.log("로그 기록: " + morningKey + " / " + JSON.stringify(logRes));
+console.log("아침 요약 알림 완료: " + title);
 }
 
-main().catch((e) => {
+main().catch(function (e) {
 console.error(e);
 process.exit(1);
 });
