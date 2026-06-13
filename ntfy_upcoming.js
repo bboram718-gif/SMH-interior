@@ -246,4 +246,34 @@ async function main() {
 
     if (SMH_APP_URL) headers["Click"] = SMH_APP_URL;
 
-    var ntfyStatus =
+    var ntfyStatus = await postText(
+      "https://ntfy.sh/" + encodeURIComponent(NTFY_TOPIC),
+      body,
+      headers
+    );
+
+    console.log("ntfy 응답: " + ntfyStatus + " / " + title);
+
+    await postLog(SHEET_API, {
+      key: key,
+      type: "upcoming",
+      eventId: eventId,
+      date: date,
+      time: time,
+      title: title,
+      body: body
+    });
+
+    console.log("로그 기록: " + key);
+
+    sent[key] = true;
+    sentCount++;
+  }
+
+  console.log("1시간 전 알림 체크 완료. 시간 있는 오늘 일정 " + checkedCount + "건 / 발송 " + sentCount + "건.");
+}
+
+main().catch(function (e) {
+  console.error(e);
+  process.exit(1);
+});
