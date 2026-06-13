@@ -173,7 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .memo{font-size:13px;color:var(--ink2);line-height:1.6;padding:8px 0}
 .memo .ml{display:block;padding-left:12px;position:relative}
 .memo .ml:before{content:"·";position:absolute;left:2px;color:var(--gold)}
-.mini-ev{font-size:12.5px;padding:6px 0;border-top:1px solid var(--line);display:flex;gap:8px;cursor:pointer}
+.mini-ev{font-size:12.5px;padding:6px 14px;border-top:1px solid var(--line);display:flex;gap:8px;cursor:pointer}
 .mini-ev .md{color:var(--ink3);min-width:78px}
 
 /* FAB */
@@ -765,7 +765,7 @@ function renderCust(){
       html+=`<div class="cust-ev-label">관련 일정</div>`;
       evs.forEach(e=>{const t=e.time||"종일";
         html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)} ${t}</span>
-          <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span></span></div>`;});
+          <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span>${e.memo?`<span style="color:var(--ink3);font-size:12px;margin-left:4px">· ${e.memo}</span>`:""}</span></div>`;});
     }
     html+=`</div></div>`;
   });
