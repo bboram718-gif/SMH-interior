@@ -234,7 +234,7 @@ const lines = [];
 if (todayEvents.length) {
 lines.push("📅 오늘 일정");
 
-```
+
 todayEvents.forEach(function (r) {
   const time = normalizeTime(r["시간"]);
   const timeLabel = time ? time + " " : "종일 ";
@@ -245,7 +245,7 @@ todayEvents.forEach(function (r) {
 
   lines.push(timeLabel + site + desc + kind + memo);
 });
-```
+
 
 } else {
 lines.push("📅 오늘 일정 없음");
@@ -255,7 +255,7 @@ if (overdueEvents.length) {
 lines.push("");
 lines.push("⚠️ 미완료 지난 일정 " + overdueEvents.length + "건");
 
-```
+
 overdueEvents.slice(0, 5).forEach(function (r) {
   const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
   const site = String(r["현장명"] || "").trim();
@@ -266,7 +266,7 @@ overdueEvents.slice(0, 5).forEach(function (r) {
 if (overdueEvents.length > 5) {
   lines.push("... 외 " + (overdueEvents.length - 5) + "건");
 }
-```
+
 
 }
 
