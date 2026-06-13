@@ -863,7 +863,10 @@ function todoItemHTML(t){
   tags+=`<span class="tag ${t.kind}">${t.kind}</span>`;
   if(t.site)tags+=`<span class="todo-site">${t.site}</span>`;
   if(t.promoted)tags+=`<span class="todo-promoted">일정으로 옮김</span>`;
-  else if(!t.done)tags+=`<button class="todo-date-btn" data-todoschedule="${t.id}">+ 날짜 잡기</button>`;
+  else if(!t.done){
+    tags+=`<button class="todo-date-btn" data-todoschedule="${t.id}">+ 날짜 잡기</button>`;
+    tags+=`<button class="todo-date-btn" data-toweek="${t.id}" style="color:var(--ink2)">📌 이번 주 메모로</button>`;
+  }
   tags+=`</div>`;
   return `<div class="todo-item ${dn}" data-todoid="${t.id}">
     <div class="todo-check" data-todocheck="${t.id}">${t.done?"✓":""}</div>
@@ -903,6 +906,15 @@ V.addEventListener("click",e=>{
     t.done=!t.done;saveTodos();render();return;}
   const tsched=e.target.closest("[data-todoschedule]");
   if(tsched){promoteTodo(Number(tsched.dataset.todoschedule));return;}
+  const tw=e.target.closest("[data-toweek]");
+  if(tw){
+    const id=Number(tw.dataset.toweek);
+    const t=TODOS.find(x=>x.id===id);if(!t)return;
+    const weekKey=wkKey(new Date());
+    DATA.push({id:Date.now(),date:"",week:weekKey,time:"",site:t.site||t.text,
+      desc:t.site?t.text:"",kind:t.kind||"기타",status:"예정",memo:t.sub?t.sub.join(" / "):""});
+    t.promoted=true;save();saveTodos();render();return;
+  }
   if(e.target.closest("#pasteToggle")){
     const ta=document.getElementById("pasteArea");
     if(ta&&pastePreview)pastePreview.raw=ta.value;
