@@ -1147,7 +1147,7 @@ function openModal(id,presetDate,presetWeek){
 function closeModal(){ov.classList.remove("show");}
 document.getElementById("addBtn").onclick=()=>openModal(null);
 document.getElementById("cancelBtn").onclick=()=>{promoteTodoId=null;closeModal();};
-ov.onclick=e=>{if(e.target===ov)closeModal();};
+// ov.onclick=e=>{if(e.target===ov)closeModal();}; // 바깥 클릭 시 닫기 비활성화
 document.getElementById("saveBtn").onclick=()=>{
   const g=x=>document.getElementById(x).value;
   const date=g("fDate").trim();
