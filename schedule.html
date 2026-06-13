@@ -335,11 +335,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 
 <div class="ov" id="tov">
   <div class="sheet">
-    <div class="dv-kind" id="tvKind"></div>
-    <h2 id="tvTitle" style="margin-bottom:10px"></h2>
+    <h2 id="tvTitle" style="margin-bottom:14px"></h2>
+    <div class="field">
+      <label>구분</label>
+      <div class="chips" id="tvKindChips">
+        <div class="chip" data-k="미팅">미팅</div>
+        <div class="chip" data-k="견적">견적</div>
+        <div class="chip" data-k="실측">실측</div>
+        <div class="chip" data-k="공사">공사</div>
+        <div class="chip" data-k="기타">기타</div>
+      </div>
+    </div>
     <div class="field"><label>할 일 내용</label><input type="text" id="tvText"></div>
-    <div class="field" id="tvSubRow"><label>하위 메모</label><div class="dv-v" id="tvSub" style="font-size:13px"></div></div>
     <div class="field"><label>현장 / 고객명 (선택)</label><input type="text" id="tvSite"></div>
+    <div class="field"><label>내용 (선택)</label><input type="text" id="tvDesc" placeholder="예: 방문, 견적서 전달"></div>
+    <div class="field"><label>메모 (선택)</label><textarea id="tvMemo" placeholder="참고사항"></textarea></div>
+    <div class="field" id="tvSubRow"><label>하위 메모</label><div class="dv-v" id="tvSub" style="font-size:13px"></div></div>
     <div class="acts">
       <button class="btn del" id="tvDel">삭제</button>
       <button class="btn" id="tvSave">저장</button>
@@ -406,9 +417,9 @@ const SEED=[
   {id:17,date:"2026-06-20",time:"09:00",site:"필복싱 신내",desc:"전기 조명",kind:"공사",status:"예정",memo:""},
   {id:18,date:"2026-06-20",time:"",site:"롯데캐슬",desc:"오전 실측 [참조은]",kind:"실측",status:"예정",memo:""},
   {id:19,date:"2026-06-25",time:"",site:"롯데캐슬",desc:"주방 시공 [참조은]",kind:"공사",status:"예정",memo:""},
-  {id:20,date:"",week:"2026-06-08",time:"",site:"성은교회",desc:"견적서 전달",kind:"견적",status:"예정",memo:""},
-  {id:21,date:"",week:"2026-06-08",time:"",site:"임스네일",desc:"견적 정리 전달",kind:"견적",status:"예정",memo:""},
-  {id:22,date:"",week:"2026-06-15",time:"",site:"재훈형님",desc:"템바 마감 확인",kind:"공사",status:"예정",memo:""},
+  {id:20,date:"",week:"2026-06-07",time:"",site:"성은교회",desc:"견적서 전달",kind:"견적",status:"예정",memo:""},
+  {id:21,date:"",week:"2026-06-07",time:"",site:"임스네일",desc:"견적 정리 전달",kind:"견적",status:"예정",memo:""},
+  {id:22,date:"",week:"2026-06-14",time:"",site:"재훈형님",desc:"템바 마감 확인",kind:"공사",status:"예정",memo:""},
 ];
 
 const SITE_INFO={
@@ -487,12 +498,13 @@ function rowToTodo(r){
   const sub=subRaw?subRaw.split("|").filter(Boolean):[];
   return {id:Number(r["할일ID"])||Date.now()+Math.random(),
     text:String(r["내용"]||""),site:String(r["현장"]||""),sub:sub,
+    desc:String(r["상세"]||""),memo:String(r["메모"]||""),
     kind:String(r["구분"]||"기타"),done:String(r["완료"]||"").toLowerCase()==="true",
     promoted:String(r["승격여부"]||"").toLowerCase()==="true"};
 }
 function todoToRow(t){
   return {"할일ID":t.id,"내용":t.text||"","현장":t.site||"",
-    "하위메모":(t.sub||[]).join("|"),"구분":t.kind||"기타",
+    "하위메모":(t.sub||[]).join("|"),"상세":t.desc||"","메모":t.memo||"","구분":t.kind||"기타",
     "완료":t.done?"true":"false","승격여부":t.promoted?"true":"false"};
 }
 
@@ -570,7 +582,7 @@ function fmt(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"
 function todayStr(){return fmt(new Date());}
 function byTime(a,b){const ta=a.time||"99:99",tb=b.time||"99:99";return ta<tb?-1:ta>tb?1:0;}
 function evOf(ds){return DATA.filter(e=>e.date===ds).sort(byTime);}
-function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-((d.getDay()+6)%7));s.setHours(0,0,0,0);return s;} // 월요일 시작
+function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());s.setHours(0,0,0,0);return s;} // 일요일 시작
 
 const V=document.getElementById("view");
 function render(){
@@ -588,7 +600,7 @@ function render(){
 }
 
 /* ===== 2주 보드 ===== */
-function wkKey(d){return fmt(weekStart(d));} // 그 주 월요일 날짜 = 주 식별자
+function wkKey(d){return fmt(weekStart(d));} // 그 주 일요일 날짜 = 주 식별자
 function weekMemos(monKey){return DATA.filter(e=>!e.date&&e.week===monKey);}
 function renderBoard(){
   const base=weekStart(cur);
@@ -609,7 +621,7 @@ function renderBoard(){
     html+=`<div class="board">`;
     for(let i=0;i<7;i++){
       const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=fmt(d);
-      const evs=evOf(ds);const isT=ds===todayStr();const wknd=i>=5;
+      const evs=evOf(ds);const isT=ds===todayStr();const wknd=d.getDay()===0||d.getDay()===6;
       let inner=`<div class="bhead"><span class="bd">${d.getDate()}</span>${DOW[d.getDay()]}</div>`;
       evs.slice(0,4).forEach(e=>{
         const t=e.time?`<span class="bt">${e.time}</span>`:"";
@@ -699,7 +711,7 @@ function todayCard(e){
 function renderMonth(){
   const y=cur.getFullYear(),m=cur.getMonth();
   const first=new Date(y,m,1),start=new Date(first);
-  start.setDate(1-((first.getDay()+6)%7)); // 월요일 시작
+  start.setDate(1-first.getDay()); // 일요일 시작
   let cells="";
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
@@ -719,7 +731,7 @@ function renderMonth(){
   V.innerHTML=`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
     <div class="arrows"><button class="btn today" data-go="today">오늘</button>
     <button class="btn" data-go="prev">‹</button><button class="btn" data-go="next">›</button></div></div>
-    <div class="cal" id="monthCal"><div class="dow"><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div><div class="sun">일</div></div>
+    <div class="cal" id="monthCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
     <div class="grid">${cells}</div></div>`;
   // 터치 스와이프로 월 이동
   const cal=document.getElementById("monthCal");
@@ -1049,8 +1061,11 @@ function promoteTodo(id){
   const g=x=>document.getElementById(x);
   g("mTitle").textContent="할 일 → 일정으로 (날짜 잡기)";
   g("fSite").value=t.site||t.text;
-  g("fDesc").value=t.site?t.text:"";
-  if(t.sub&&t.sub.length)g("fMemo").value=t.sub.join(" / ");
+  g("fDesc").value=t.desc||(t.site?t.text:"");
+  const memoParts=[];
+  if(t.memo)memoParts.push(t.memo);
+  if(t.sub&&t.sub.length)memoParts.push(t.sub.join(" / "));
+  g("fMemo").value=memoParts.join(" / ");
   setKind(t.kind||"미팅");
 }
 const tov=document.getElementById("tov");
@@ -1059,10 +1074,13 @@ function openTodoDetail(id){
   const t=TODOS.find(x=>x.id===id);if(!t)return;
   todoDetailId=id;
   const g=x=>document.getElementById(x);
-  g("tvKind").className="dv-kind "+(t.kind||"기타");g("tvKind").textContent=t.kind||"기타";
+  const curKind=t.kind||"기타";
+  g("tvKindChips").querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c.dataset.k===curKind));
   g("tvTitle").textContent=t.done?"완료된 할 일":"할 일";
   g("tvText").value=t.text||"";
   g("tvSite").value=t.site||"";
+  g("tvDesc").value=t.desc||"";
+  g("tvMemo").value=t.memo||"";
   if(t.sub&&t.sub.length){g("tvSubRow").style.display="block";g("tvSub").textContent=t.sub.map(s=>"› "+s).join("\n");}
   else g("tvSubRow").style.display="none";
   g("tvSchedule").style.display=t.promoted?"none":"block";
@@ -1071,10 +1089,17 @@ function openTodoDetail(id){
 function closeTodoDetail(){tov.classList.remove("show");}
 document.getElementById("tvClose").onclick=closeTodoDetail;
 tov.onclick=e=>{if(e.target===tov)closeTodoDetail();};
+document.getElementById("tvKindChips").querySelectorAll(".chip").forEach(c=>{
+  c.onclick=()=>{document.getElementById("tvKindChips").querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");};
+});
 document.getElementById("tvSave").onclick=()=>{
   const t=TODOS.find(x=>x.id===todoDetailId);if(!t)return;
   t.text=document.getElementById("tvText").value.trim()||t.text;
   t.site=document.getElementById("tvSite").value.trim();
+  t.desc=document.getElementById("tvDesc").value.trim();
+  t.memo=document.getElementById("tvMemo").value.trim();
+  const onChip=document.getElementById("tvKindChips").querySelector(".chip.on");
+  t.kind=onChip?onChip.dataset.k:(t.kind||"기타");
   saveTodos();closeTodoDetail();render();};
 document.getElementById("tvDel").onclick=()=>{
   if(!confirm("이 할 일을 삭제할까요?"))return;
