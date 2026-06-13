@@ -168,7 +168,7 @@ eventTime.setHours(hh, mm, 0, 0);
 
 var diffMin = (eventTime.getTime() - now.getTime()) / 60000;
 
-if (diffMin < 25 || diffMin > 35) continue;
+if (diffMin < 55 || diffMin > 65) continue;
 
 var site = String(r["현장명"] || "일정").trim();
 var eventId = String(r["일정ID"] || date + "_" + time + "_" + site).trim();
@@ -223,7 +223,7 @@ sentCount++;
 
 }
 
-console.log("30분 전 알림 체크 완료. 시간 있는 오늘 일정 " + checkedCount + "건 / 발송 " + sentCount + "건.");
+console.log("1시간 전 알림 체크 완료. 시간 있는 오늘 일정 " + checkedCount + "건 / 발송 " + sentCount + "건.");
 }
 
 main().catch(function (e) {
