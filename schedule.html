@@ -304,6 +304,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <div class="dv-row" id="dvDescRow"><span class="dv-l">내용</span><span class="dv-v" id="dvDesc"></span></div>
     <div class="dv-row" id="dvMemoRow"><span class="dv-l">메모</span><span class="dv-v" id="dvMemo"></span></div>
     <div class="dv-row" id="dvStatusRow"><span class="dv-l">상태</span><span class="dv-v" id="dvStatus"></span></div>
+    <div class="acts" id="dvWeekActs" style="display:none;margin-bottom:8px">
+      <button class="btn save" id="dvSetDate" style="flex:1">📅 날짜 잡기</button>
+      <button class="btn" id="dvToTodo" style="flex:1">☑️ 할일로 보내기</button>
+    </div>
     <div class="acts">
       <button class="btn del" id="dvDel">삭제</button>
       <button class="btn" id="dvEdit">수정</button>
@@ -786,8 +790,16 @@ function renderCust(){
   if(!filtered.length)html+=`<div class="empty">검색 결과가 없습니다</div>`;
   V.innerHTML=html;
   const si=document.getElementById("custSearch");
-  if(si){si.oninput=ev=>{custQuery=ev.target.value;const pos=si.selectionStart;renderCust();
-    const n=document.getElementById("custSearch");n.focus();n.setSelectionRange(pos,pos);};}
+  if(si){
+    let composing=false;
+    si.addEventListener("compositionstart",()=>{composing=true;});
+    si.addEventListener("compositionend",ev=>{composing=false;custQuery=ev.target.value;
+      const pos=si.selectionStart;renderCust();
+      const n=document.getElementById("custSearch");if(n){n.focus();n.setSelectionRange(pos,pos);}});
+    si.addEventListener("input",ev=>{if(composing)return;
+      custQuery=ev.target.value;const pos=si.selectionStart;renderCust();
+      const n=document.getElementById("custSearch");if(n){n.focus();n.setSelectionRange(pos,pos);}});
+  }
 }
 function cssid(s){return s.replace(/[^a-zA-Z0-9가-힣]/g,"_");}
 
@@ -1018,6 +1030,10 @@ function openDetail(id){
   g("dvStatus").textContent=done?"완료":"예정";
   g("dvStatus").className="dv-v"+(done?" done":"");
   g("dvDone").textContent=done?"완료 취소":"완료 처리";
+  // 주간 메모(날짜 미정)일 때만 날짜 잡기/할일로 보내기 버튼 표시
+  const isWeekMemo=!ev.date&&!!ev.week;
+  g("dvWeekActs").style.display=isWeekMemo?"flex":"none";
+  g("dvStatusRow").style.display=isWeekMemo?"none":"flex";
   dov.classList.add("show");
 }
 function closeDetail(){dov.classList.remove("show");}
@@ -1030,6 +1046,17 @@ document.getElementById("dvDone").onclick=()=>{
 document.getElementById("dvDel").onclick=()=>{
   if(!confirm("이 일정을 삭제할까요?"))return;
   DATA=DATA.filter(x=>x.id!==detailId);save();closeDetail();render();};
+document.getElementById("dvSetDate").onclick=()=>{closeDetail();openModal(detailId);};
+document.getElementById("dvToTodo").onclick=()=>{
+  const ev=DATA.find(x=>x.id===detailId);if(!ev)return;
+  const t={id:Date.now(),text:ev.site+(ev.desc?" · "+ev.desc:""),site:ev.site,
+    kind:ev.kind||"기타",done:false,promoted:false,
+    sub:ev.memo?[ev.memo]:[],order:TODOS.length};
+  TODOS.push(t);saveTodos();
+  DATA=DATA.filter(x=>x.id!==detailId);save();
+  closeDetail();render();
+  alert("할일 탭으로 이동했습니다");
+};
 
 /* modal */
 const ov=document.getElementById("ov");
