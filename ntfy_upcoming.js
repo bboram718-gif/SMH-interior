@@ -75,46 +75,16 @@ return /^[\x00-\x7F]*$/.test(s)
 : "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
 }
 
-async function requestWithRedirect(url, options, maxRedirects) {
-let currentUrl = url;
-const limit = typeof maxRedirects === "number" ? maxRedirects : 5;
-
-for (let i = 0; i <= limit; i++) {
-const res = await fetch(currentUrl, {
-...options,
-redirect: "manual",
-});
-
-```
-const isRedirect =
-  res.status === 301 ||
-  res.status === 302 ||
-  res.status === 303 ||
-  res.status === 307 ||
-  res.status === 308;
-
-if (!isRedirect) return res;
-
-const location = res.headers.get("location");
-if (!location) return res;
-
-currentUrl = new URL(location, currentUrl).toString();
-```
-
-}
-
-throw new Error("리다이렉트가 너무 많습니다: " + url);
-}
-
 async function fetchJson(url) {
 const target = addQuery(url, "mode", "notificationData");
 
-const res = await requestWithRedirect(target, {
+const res = await fetch(target, {
 method: "GET",
+redirect: "follow",
 headers: {
 Accept: "application/json",
-"User-Agent": "SMH-ntfy-actions",
-},
+"User-Agent": "SMH-ntfy-actions"
+}
 });
 
 const text = await res.text();
@@ -138,10 +108,11 @@ throw new Error("JSON parse 실패: " + text.slice(0, 500));
 }
 
 async function postText(url, body, headers) {
-const res = await requestWithRedirect(url, {
+const res = await fetch(url, {
 method: "POST",
+redirect: "follow",
 body: String(body),
-headers: headers || {},
+headers: headers || {}
 });
 
 const text = await res.text();
@@ -161,14 +132,15 @@ return { status: res.status, body: text };
 }
 
 async function postJson(url, obj) {
-const res = await requestWithRedirect(url, {
+const res = await fetch(url, {
 method: "POST",
+redirect: "follow",
 body: JSON.stringify(obj),
 headers: {
 "Content-Type": "application/json; charset=utf-8",
 Accept: "application/json",
-"User-Agent": "SMH-ntfy-actions",
-},
+"User-Agent": "SMH-ntfy-actions"
+}
 });
 
 const text = await res.text();
@@ -244,7 +216,7 @@ eventTime.setHours(hh, mm, 0, 0);
 
 const diffMin = (eventTime - now) / 60000;
 
-// 25~35분 사이일 때만 알림
+// 현재 기준 25~35분 뒤 일정만 알림
 if (diffMin < 25 || diffMin > 35) continue;
 
 const eventId = String(
@@ -282,7 +254,7 @@ const ntfyHeaders = {
   Title: encodeNtfyHeader(title),
   Priority: "4",
   Tags: "bell",
-  "Content-Type": "text/plain; charset=utf-8",
+  "Content-Type": "text/plain; charset=utf-8"
 };
 
 if (SMH_APP_URL) {
@@ -306,8 +278,8 @@ const logRes = await postJson(SHEET_API, {
     date: date,
     time: timeStr,
     title: title,
-    body: body,
-  },
+    body: body
+  }
 });
 
 console.log("로그 기록: " + upcomingKey + " / " + JSON.stringify(logRes));
