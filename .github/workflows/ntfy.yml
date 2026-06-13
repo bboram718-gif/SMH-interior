@@ -1,0 +1,32 @@
+name: SMH ntfy 알림
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 매일 오전 6시 KST (= 전날 21:00 UTC)
+    - cron: '*/5 * * * *'  # 5분마다 (30분 전 알림)
+  workflow_dispatch:         # 수동 실행 (테스트용)
+
+jobs:
+  morning-alert:
+    name: 아침 요약 알림
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - name: 아침 일정 요약 발송
+        env:
+          SHEET_API: ${{ secrets.SHEET_API }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: node ntfy_morning.js
+
+  upcoming-alert:
+    name: 30분 전 알림
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - name: 30분 전 알림 체크
+        env:
+          SHEET_API: ${{ secrets.SHEET_API }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: node ntfy_upcoming.js
