@@ -170,11 +170,12 @@ var diffMin = (eventTime.getTime() - now.getTime()) / 60000;
 
 console.log(
   "검사:",
-  date,
-  time,
-  String(r["현장명"] || ""),
-  "남은분:",
-  Math.round(diffMin)
+  "날짜:", date,
+  "raw시간:", String(r["시간"] || ""),
+  "파싱시간:", time,
+  "현장:", String(r["현장명"] || ""),
+  "남은분:", Math.round(diffMin)
+
 );
 
 if (diffMin < 55 || diffMin > 65) continue;
