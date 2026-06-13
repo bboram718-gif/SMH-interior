@@ -213,6 +213,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .acts .save{background:var(--black);color:#fff;border-color:var(--black)}
 .acts .del{color:#c0392b;border-color:#e0b4ae;flex:0 0 auto;padding:13px 16px}
 .hint{font-size:11.5px;color:var(--ink3);text-align:center;margin:6px 0 0;line-height:1.5}
+/* 현장명 자동완성 */
+.site-ac-wrap{position:relative}
+.site-ac-list{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--line2);
+  border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:200;max-height:200px;overflow-y:auto;margin-top:3px;display:none}
+.site-ac-list.open{display:block}
+.site-ac-item{padding:11px 14px;font-size:15px;cursor:pointer;border-bottom:1px solid var(--line)}
+.site-ac-item:last-child{border-bottom:none}
+.site-ac-item:active,.site-ac-item:hover{background:var(--bg)}
 
 /* detail view modal */
 .dv-kind{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px;margin-bottom:8px}
@@ -358,7 +366,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
       <div class="field"><label>날짜</label><input type="date" id="fDate"></div>
       <div class="field"><label>시간 (선택)</label><input type="time" id="fTime"></div>
     </div>
-    <div class="field"><label>현장 / 고객명</label><input type="text" id="fSite" placeholder="예: 필복싱, 길성수 대표"></div>
+    <div class="field"><label>현장 / 고객명</label>
+      <div class="site-ac-wrap">
+        <input type="text" id="fSite" placeholder="예: 필복싱, 길성수 대표" autocomplete="off">
+        <div class="site-ac-list" id="siteAcList"></div>
+      </div>
+    </div>
     <div class="field"><label>내용</label><input type="text" id="fDesc" placeholder="예: 방문, 상세 실측, 견적서 전달"></div>
     <div class="field"><label>메모 (선택)</label><textarea id="fMemo" placeholder="현장 요청사항, 참고사항 등"></textarea></div>
     <div class="acts">
@@ -749,7 +762,10 @@ const SITE_ORDER_KEY="smh_site_order";
 function loadSiteOrder(){try{const s=localStorage.getItem(SITE_ORDER_KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
 function saveSiteOrder(order){localStorage.setItem(SITE_ORDER_KEY,JSON.stringify(order));}
 function moveSite(name,dir){
-  const allNames=[...new Set([...Object.keys(SITE_INFO),...Object.keys((() => {const m={};DATA.forEach(e=>{if(e.site)m[e.site]=1;});return m;})())])];
+  const normToCanon2={};
+  Object.keys(SITE_INFO).forEach(n=>{normToCanon2[normSite(n)]=n;});
+  DATA.forEach(e=>{if(!e.date)return;const norm=normSite(e.site||"기타");if(!normToCanon2[norm])normToCanon2[norm]=e.site||"기타";});
+  const allNames=Object.values(normToCanon2);
   let order=loadSiteOrder()||[...allNames].sort();
   allNames.forEach(n=>{if(!order.includes(n))order.push(n);});
   order=order.filter(n=>allNames.includes(n));
@@ -760,24 +776,41 @@ function moveSite(name,dir){
   saveSiteOrder(order);
   renderCust();
 }
+function normSite(n){return n.replace(/\s+/g,"");}  // 공백 제거로 동일 현장 판별
 function renderCust(){
-  const map={};
-  DATA.forEach(e=>{if(!e.date)return;const k=e.site||"기타";(map[k]=map[k]||[]).push(e);});
-  const allNames=[...new Set([...Object.keys(map),...Object.keys(SITE_INFO)])];
+  // 공백 무시 기준으로 현장 병합 (norm → canonical name, events[])
+  const normToCanon={};
+  const normToEvs={};
+  // SITE_INFO 이름을 canonical로 우선 등록
+  Object.keys(SITE_INFO).forEach(name=>{
+    const norm=normSite(name);
+    normToCanon[norm]=name;
+    normToEvs[norm]=normToEvs[norm]||[];
+  });
+  // 일정에서 현장명 수집 (SITE_INFO에 없으면 첫 등장 이름을 canonical로)
+  DATA.forEach(e=>{
+    if(!e.date)return;
+    const name=e.site||"기타";
+    const norm=normSite(name);
+    if(!normToCanon[norm])normToCanon[norm]=name;
+    (normToEvs[norm]=normToEvs[norm]||[]).push(e);
+  });
+  const allNames=Object.values(normToCanon);
   let order=loadSiteOrder()||[...allNames].sort();
   allNames.forEach(n=>{if(!order.includes(n))order.push(n);});
   order=order.filter(n=>allNames.includes(n));
   const q=custQuery.trim().toLowerCase();
-  // 숨긴 현장 제외 (검색 중에는 보여줌)
   const visible=q?order:order.filter(name=>!SITE_INFO[name]?.hidden);
   const filtered=q?visible.filter(name=>{
-    const evs=map[name]||[];const info=findInfo(name);
+    const norm=normSite(name);
+    const evs=normToEvs[norm]||[];const info=SITE_INFO[name]||findInfo(name);
     return [name,info?.customer,info?.note,...evs.map(e=>e.desc+" "+e.memo)].join(" ").toLowerCase().includes(q);
   }):visible;
   let html=`<input class="search" id="custSearch" placeholder="현장명, 고객명, 메모 검색" value="${custQuery}">`;
   filtered.forEach((name,idx)=>{
-    const evs=(map[name]||[]).sort((a,b)=>a.date<b.date?-1:1);
-    const info=findInfo(name);
+    const norm=normSite(name);
+    const evs=(normToEvs[norm]||[]).sort((a,b)=>a.date<b.date?-1:1);
+    const info=SITE_INFO[name]||findInfo(name);
     const meta=info?.customer||"";
     const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"일정 없음";
     const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
@@ -1119,6 +1152,37 @@ document.getElementById("dvToTodo").onclick=()=>{
 
 /* modal */
 const ov=document.getElementById("ov");
+// 현장명 자동완성
+function getSiteNames(){
+  const s=new Set();
+  Object.keys(SITE_INFO).forEach(n=>s.add(n));
+  DATA.forEach(e=>{if(e.site)s.add(e.site);});
+  // normSite 기준 중복 제거 (공백 차이 통합)
+  const normMap={};
+  [...s].forEach(n=>{const norm=normSite(n);if(!normMap[norm])normMap[norm]=n;});
+  return Object.values(normMap).sort();
+}
+function initSiteAc(){
+  const inp=document.getElementById("fSite");
+  const list=document.getElementById("siteAcList");
+  if(!inp||!list)return;
+  function showAc(){
+    const q=inp.value.replace(/\s+/g,"").toLowerCase();
+    const names=getSiteNames();
+    const matches=q?names.filter(n=>normSite(n).toLowerCase().includes(q)):names;
+    if(!matches.length||!q&&!document.activeElement===inp){list.classList.remove("open");return;}
+    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${n}</div>`).join("");
+    list.classList.add("open");
+    list.querySelectorAll(".site-ac-item").forEach(item=>{
+      item.addEventListener("mousedown",e=>{e.preventDefault();inp.value=item.textContent;list.classList.remove("open");});
+      item.addEventListener("touchend",e=>{e.preventDefault();inp.value=item.textContent;list.classList.remove("open");inp.blur();});
+    });
+  }
+  inp.addEventListener("input",showAc);
+  inp.addEventListener("focus",showAc);
+  inp.addEventListener("blur",()=>setTimeout(()=>list.classList.remove("open"),150));
+}
+
 let curKind="미팅";
 document.getElementById("kindChips").addEventListener("click",e=>{
   const c=e.target.closest(".chip");if(!c)return;
@@ -1148,6 +1212,7 @@ function openModal(id,presetDate,presetWeek){
     setKind("미팅");g("delBtn").style.display="none";
   }
   ov.classList.add("show");
+  initSiteAc();
 }
 function closeModal(){ov.classList.remove("show");}
 document.getElementById("addBtn").onclick=()=>openModal(null);
