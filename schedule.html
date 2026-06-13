@@ -72,9 +72,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 /* weekly memo */
 .wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:-6px 0 18px}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
-.wmemo-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13.5px;cursor:pointer}
+.wmemo-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:13.5px}
 .wmemo-item .wdot{color:var(--gold);flex-shrink:0}
-.wmemo-item .wtag{margin-left:auto}
+.wmemo-item .wmemo-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wmemo-item .wtag{flex-shrink:0}
+.wmemo-btn{background:none;border:1px solid var(--line2);border-radius:6px;padding:2px 5px;
+  font-size:13px;cursor:pointer;flex-shrink:0;line-height:1.4}
+.wmemo-btn:active{background:var(--gold-bg)}
 .wmemo-add{font-size:12.5px;color:var(--gold);cursor:pointer;font-weight:500;padding:5px 0 0;display:inline-flex;gap:4px;align-items:center}
 .wmemo-add:hover{text-decoration:underline}
 .wmemo-empty{font-size:12.5px;color:var(--ink3);padding:2px 0}
@@ -600,9 +604,12 @@ function renderBoard(){
     if(wm.length){
       wm.forEach(e=>{
         const dn=e.status==="완료"?"done":"";
-        html+=`<div class="wmemo-item ${dn}" data-id="${e.id}"><span class="wdot">·</span>
-          <span>${e.site}${e.desc?" · "+e.desc:""}</span>
-          <span class="tag ${e.kind} wtag">${e.kind}</span></div>`;
+        html+=`<div class="wmemo-item ${dn}"><span class="wdot">·</span>
+          <span class="wmemo-text">${e.site}${e.desc?" · "+e.desc:""}</span>
+          <span class="tag ${e.kind} wtag">${e.kind}</span>
+          <button class="wmemo-btn" data-wdate="${e.id}" title="날짜 잡기">📅</button>
+          <button class="wmemo-btn" data-wtodo="${e.id}" title="할일로 보내기">☑️</button>
+        </div>`;
       });
     }else{
       html+=`<div class="wmemo-empty">아직 없음</div>`;
@@ -927,6 +934,18 @@ V.addEventListener("click",e=>{
     at.querySelector("span").textContent=l.classList.contains("open")?"▴":"▾";return;}
   const wadd=e.target.closest(".wmemo-add");
   if(wadd){openModal(null,null,wadd.dataset.week);return;}
+  const wdate=e.target.closest("[data-wdate]");
+  if(wdate){e.stopPropagation();openModal(Number(wdate.dataset.wdate));return;}
+  const wtodo=e.target.closest("[data-wtodo]");
+  if(wtodo){e.stopPropagation();
+    const id=Number(wtodo.dataset.wtodo);
+    const ev=DATA.find(x=>x.id===id);if(!ev)return;
+    const t={id:Date.now(),text:ev.site+(ev.desc?" · "+ev.desc:""),site:ev.site,
+      kind:ev.kind||"기타",done:false,promoted:false,
+      sub:ev.memo?[ev.memo]:[],order:TODOS.length};
+    TODOS.push(t);saveTodos();
+    DATA=DATA.filter(x=>x.id!==id);save();render();return;
+  }
   const mv=e.target.closest(".site-move");
   if(mv){e.stopPropagation();moveSite(mv.dataset.site,mv.dataset.dir);return;}
   const ch=e.target.closest(".cust-header");
