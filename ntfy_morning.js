@@ -52,20 +52,38 @@ return s.slice(0, 10);
 }
 
 function normalizeTime(value) {
-if (!value) return "";
+  if (!value) return "";
 
-const s = String(value).trim();
+  const s = String(value).trim();
 
-const m = s.match(/^(\d{1,2}):(\d{2})/);
-if (m) return pad(m[1]) + ":" + pad(m[2]);
+  // 이미 "01:35" 같은 문자열이면 그대로 사용
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (m) return pad(m[1]) + ":" + pad(m[2]);
 
-const d = new Date(s);
-if (!Number.isNaN(d.getTime())) {
-const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
-}
+  // Google Sheets 시간 셀은 1899-12-30 계열 Date로 넘어올 수 있음.
+  // 이 경우 단순 +9시간을 하면 시간이 틀어지므로
+  // Asia/Seoul 기준으로 직접 포맷한다.
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(d);
 
-return "";
+    let hh = "";
+    let mm = "";
+
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].type === "hour") hh = parts[i].value;
+      if (parts[i].type === "minute") mm = parts[i].value;
+    }
+
+    if (hh && mm) return hh + ":" + mm;
+  }
+
+  return "";
 }
 
 function encodeNtfyHeader(value) {
