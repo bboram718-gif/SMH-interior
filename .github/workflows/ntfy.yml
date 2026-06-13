@@ -1,47 +1,56 @@
 name: SMH ntfy 알림
 
 on:
-  schedule:
-    - cron: '0 21 * * *'   # 매일 오전 6시 KST (= 전날 21:00 UTC)
-    - cron: '*/5 * * * *'  # 5분마다 (30분 전 알림)
-  workflow_dispatch:         # 수동 실행 (테스트용)
+schedule:
+- cron: '0 21 * * *'   # 매일 오전 6시 KST (= 전날 21:00 UTC)
+- cron: '*/5 * * * *'  # 5분마다 30분 전 알림
+workflow_dispatch:
 
 jobs:
-  morning-alert:
-    name: 아침 요약 알림
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
-    steps:
-      - uses: actions/checkout@v4
-      - name: 아침 일정 요약 발송
-        env:
-          SHEET_API: ${{ secrets.SHEET_API }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-        run: node ntfy_morning.js
+morning-alert:
+name: 아침 요약 알림
+runs-on: ubuntu-latest
+if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
+steps:
+- name: 코드 가져오기
+uses: actions/checkout@v4
 
-    upcoming-alert:
-    name: 30분 전 알림
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
-    steps:
-      - uses: actions/checkout@v4
+```
+  - name: 아침 일정 요약 발송
+    env:
+      SHEET_API: ${{ secrets.SHEET_API }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
+    run: node ntfy_morning.js
+```
 
-      - name: 실행 파일 확인
-        run: |
-          echo "현재 폴더:"
-          pwd
-          echo "파일 목록:"
-          ls -la
-          echo "현재 커밋:"
-          git rev-parse HEAD
-          git log -1 --oneline
-          echo "의심 구문 검색:"
-          grep -n "rows.filter\|requestWithRedirect\|timedEvents\|for (var i" ntfy_upcoming.js || true
-          echo "185~205줄 출력:"
-          nl -ba ntfy_upcoming.js | sed -n '185,205p'
+upcoming-alert:
+name: 30분 전 알림
+runs-on: ubuntu-latest
+if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
+steps:
+- name: 코드 가져오기
+uses: actions/checkout@v4
 
-      - name: 30분 전 알림 체크
-        env:
-          SHEET_API: ${{ secrets.SHEET_API }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-        run: node ntfy_upcoming.js
+```
+  - name: 실행 파일 확인
+    run: |
+      echo "현재 폴더:"
+      pwd
+      echo "파일 목록:"
+      ls -la
+      echo "현재 커밋:"
+      git rev-parse HEAD
+      git log -1 --oneline
+      echo "ntfy_upcoming.js 의심 구문 검색:"
+      grep -n "rows.filter\|requestWithRedirect\|timedEvents\|for (var i" ntfy_upcoming.js || true
+      echo "ntfy_upcoming.js 180~210줄:"
+      nl -ba ntfy_upcoming.js | sed -n '180,210p'
+
+  - name: 30분 전 알림 체크
+    env:
+      SHEET_API: ${{ secrets.SHEET_API }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      SMH_APP_URL: ${{ secrets.SMH_APP_URL }}
+    run: node ntfy_upcoming.js
+```
