@@ -19,12 +19,27 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: node ntfy_morning.js
 
-  upcoming-alert:
+    upcoming-alert:
     name: 30분 전 알림
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
     steps:
       - uses: actions/checkout@v4
+
+      - name: 실행 파일 확인
+        run: |
+          echo "현재 폴더:"
+          pwd
+          echo "파일 목록:"
+          ls -la
+          echo "현재 커밋:"
+          git rev-parse HEAD
+          git log -1 --oneline
+          echo "의심 구문 검색:"
+          grep -n "rows.filter\|requestWithRedirect\|timedEvents\|for (var i" ntfy_upcoming.js || true
+          echo "185~205줄 출력:"
+          nl -ba ntfy_upcoming.js | sed -n '185,205p'
+
       - name: 30분 전 알림 체크
         env:
           SHEET_API: ${{ secrets.SHEET_API }}
