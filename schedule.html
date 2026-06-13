@@ -439,21 +439,18 @@ let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
 
-// 시트 날짜(예: 2026-06-11T15:00:00.000Z) → 로컬 YYYY-MM-DD 보정
+// 시트 날짜/시간 → 로컬 변환 (getHours/getDate 사용: 브라우저 로컬타임 = KST)
 function normDate(v){
   if(!v)return"";
   if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
   const d=new Date(v);if(isNaN(d))return"";
-  // UTC 15:00 = KST 다음날 00:00 → 한국 날짜로 환산
-  const k=new Date(d.getTime()+9*3600*1000);
-  return k.getUTCFullYear()+"-"+String(k.getUTCMonth()+1).padStart(2,"0")+"-"+String(k.getUTCDate()).padStart(2,"0");
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 function normTime(v){
   if(!v)return"";
   if(typeof v==="string"&&/^\d{1,2}:\d{2}/.test(v))return v.slice(0,5);
   const d=new Date(v);if(isNaN(d))return typeof v==="string"?v:"";
-  const k=new Date(d.getTime()+9*3600*1000);
-  return String(k.getUTCHours()).padStart(2,"0")+":"+String(k.getUTCMinutes()).padStart(2,"0");
+  return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
 // 시트행(한글키) → 앱객체(영문키)
 function rowToEvent(r){
