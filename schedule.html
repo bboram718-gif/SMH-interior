@@ -154,17 +154,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .cust-top{padding:14px 16px 4px}
 .cust-name{font-size:16px;font-weight:600}
 .cust-meta{font-size:12.5px;color:var(--ink3);margin-top:2px}
-.prog{padding:13px 16px 4px}
-.prog-track{display:flex;align-items:flex-start;position:relative}
-.pstep{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:2}
-.pdot{width:13px;height:13px;border-radius:50%;background:#dcd9d0;border:2px solid var(--bg);transition:.2s}
-.pline{position:absolute;top:6px;left:7%;right:7%;height:2px;background:#e4e1d8;z-index:1}
-.pline-fill{position:absolute;top:6px;left:7%;height:2px;background:var(--gold);z-index:1;transition:.3s}
-.plabel{font-size:10.5px;color:var(--ink3);margin-top:6px;font-weight:500}
-.pstep.done .pdot{background:var(--gold)}
-.pstep.now .pdot{background:var(--gold);width:15px;height:15px;box-shadow:0 0 0 3px var(--gold-bg)}
-.pstep.now .plabel{color:var(--gold);font-weight:700}
-.pstep.done .plabel{color:var(--ink2)}
+.site-note{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+  font-size:13px;resize:vertical;font-family:inherit;color:var(--ink);background:var(--bg);
+  min-height:64px;margin-top:0;line-height:1.6;display:block}
+.site-note:focus{outline:none;border-color:var(--gold);background:#fff}
+.site-note-wrap{padding:6px 16px 12px}
 .cust-next{margin:8px 16px 4px;background:var(--gold-bg);border-radius:8px;padding:8px 11px;
   font-size:13px;color:#7a5a08}
 .cust-next b{font-weight:600}
@@ -465,7 +459,12 @@ function eventToRow(e){
 }
 function rowToSite(r){
   return {name:String(r["현장명"]||""),customer:String(r["고객명"]||""),budget:String(r["예산"]||""),
-    stage:String(r["단계"]||""),next:String(r["다음할일"]||""),core:String(r["핵심메모"]||"")};
+    stage:String(r["단계"]||""),next:String(r["다음할일"]||""),core:String(r["핵심메모"]||""),
+    note:String(r["노트"]||"")};
+}
+function siteToRow(name,info){
+  return {"현장명":name,"고객명":info.customer||"","예산":info.budget||"","단계":info.stage||"",
+    "다음할일":info.next||"","핵심메모":info.core||"","노트":info.note||""};
 }
 function rowToTodo(r){
   const subRaw=String(r["하위메모"]||"");
@@ -488,11 +487,11 @@ async function syncFromSheet(){
     const j=await res.json();
     if(j.일정){DATA=j.일정.map(rowToEvent);localStorage.setItem(STORE,JSON.stringify(DATA));}
     if(j.현장){
-      // 시트 현장 → SITE_INFO 갱신 (핵심메모만 시트값으로, 상세 memos는 기존 유지)
       j.현장.forEach(r=>{
         const s=rowToSite(r);if(!s.name)return;
         const ex=SITE_INFO[s.name]||{memos:[]};
-        SITE_INFO[s.name]={customer:s.customer,budget:s.budget,core:s.core,next:s.next,memos:ex.memos||[]};
+        SITE_INFO[s.name]={customer:s.customer,budget:s.budget,core:s.core,next:s.next,
+          note:s.note||ex.note||"",memos:ex.memos||[]};
       });
     }
     if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
@@ -524,6 +523,25 @@ function pushTodosToSheet(){
         body:JSON.stringify({sheet:"할일",action:"replaceAll",rows:TODOS.map(todoToRow)})});
     }catch(err){/* 로컬 저장됨, 무시 */}
   },800);
+}
+
+let sitesPushTimer=null;
+function pushSitesToSheet(){
+  if(sitesPushTimer)clearTimeout(sitesPushTimer);
+  sitesPushTimer=setTimeout(async()=>{
+    try{
+      const rows=Object.entries(SITE_INFO).map(([name,info])=>siteToRow(name,info));
+      await fetch(SHEET_API,{method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({sheet:"현장",action:"replaceAll",rows})});
+    }catch(err){/* 무시 */}
+  },800);
+}
+function saveNote(el){
+  const name=el.dataset.site;
+  if(!SITE_INFO[name])SITE_INFO[name]={memos:[],note:""};
+  SITE_INFO[name].note=el.value;
+  pushSitesToSheet();
 }
 function fmt(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function todayStr(){return fmt(new Date());}
@@ -718,15 +736,15 @@ function renderCust(){
       if(!hay.includes(q))return;
     }
     shown++;
-    const stage=inferStage(evs);
     const meta=[info?.customer,info?.budget?"예산 "+info.budget:""].filter(Boolean).join(" · ");
     const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"없음";
+    const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
     html+=`<div class="cust">
       <div class="cust-top"><div class="cust-name">${name}</div>${meta?`<div class="cust-meta">${meta}</div>`:""}</div>
-      ${progressHTML(stage)}
       ${info?.next?`<div class="cust-next"><b>다음 할 일:</b> ${info.next}</div>`:""}
       ${info?.core?`<div class="cust-core">${info.core}</div>`:""}
-      <div class="cust-recent">최근 일정: ${recent}</div>`;
+      <div class="cust-recent">최근 일정: ${recent}</div>
+      <div class="site-note-wrap"><textarea class="site-note" data-site="${name.replace(/"/g,"&quot;")}" oninput="saveNote(this)" placeholder="현장 노트 (자유 기재 / 자동저장)">${noteVal}</textarea></div>`;
     const hasMore=(info?.memos?.length)||evs.length;
     if(hasMore){
       html+=`<div class="cust-toggle" data-cust="${name}">상세 보기 ▾</div>
