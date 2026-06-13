@@ -1,14 +1,12 @@
 // SMH 30분 전 알림 — GitHub Actions에서 5분마다 실행
 // 환경변수: SHEET_API, NTFY_TOPIC
-// - SHEET_API 예: https://script.google.com/macros/s/xxxxx/exec
-// - NTFY_TOPIC 예: smh-schedule-bboram-718-kj92x6
+// 선택 환경변수: SMH_APP_URL
 
 function pad(n) {
 return String(n).padStart(2, "0");
 }
 
 function kstNow() {
-// KST 벽시계 시간을 Date처럼 쓰기 위한 변환
 return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
 }
 
@@ -37,7 +35,6 @@ if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
 const d = new Date(s);
 if (!Number.isNaN(d.getTime())) {
-// Apps Script/Sheets 날짜가 ISO로 넘어올 때 KST 기준 날짜로 보정
 const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
 return (
 k.getUTCFullYear() +
@@ -49,7 +46,7 @@ pad(k.getUTCDate())
 }
 
 const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-if (m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+if (m) return m[1] + "-" + pad(m[2]) + "-" + pad(m[3]);
 
 return s.slice(0, 10);
 }
@@ -60,12 +57,12 @@ if (!value) return "";
 const s = String(value).trim();
 
 const m = s.match(/^(\d{1,2}):(\d{2})/);
-if (m) return `${pad(m[1])}:${pad(m[2])}`;
+if (m) return pad(m[1]) + ":" + pad(m[2]);
 
 const d = new Date(s);
 if (!Number.isNaN(d.getTime())) {
 const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return `${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}`;
+return pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
 }
 
 return "";
@@ -78,12 +75,42 @@ return /^[\x00-\x7F]*$/.test(s)
 : "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
 }
 
+async function requestWithRedirect(url, options, maxRedirects) {
+let currentUrl = url;
+const limit = typeof maxRedirects === "number" ? maxRedirects : 5;
+
+for (let i = 0; i <= limit; i++) {
+const res = await fetch(currentUrl, {
+...options,
+redirect: "manual",
+});
+
+```
+const isRedirect =
+  res.status === 301 ||
+  res.status === 302 ||
+  res.status === 303 ||
+  res.status === 307 ||
+  res.status === 308;
+
+if (!isRedirect) return res;
+
+const location = res.headers.get("location");
+if (!location) return res;
+
+currentUrl = new URL(location, currentUrl).toString();
+```
+
+}
+
+throw new Error("리다이렉트가 너무 많습니다: " + url);
+}
+
 async function fetchJson(url) {
 const target = addQuery(url, "mode", "notificationData");
 
-const res = await fetch(target, {
+const res = await requestWithRedirect(target, {
 method: "GET",
-redirect: "follow",
 headers: {
 Accept: "application/json",
 "User-Agent": "SMH-ntfy-actions",
@@ -110,19 +137,18 @@ throw new Error("JSON parse 실패: " + text.slice(0, 500));
 }
 }
 
-async function postText(url, body, headers = {}) {
-const res = await fetch(url, {
+async function postText(url, body, headers) {
+const res = await requestWithRedirect(url, {
 method: "POST",
-redirect: "follow",
 body: String(body),
-headers,
+headers: headers || {},
 });
 
 const text = await res.text();
 
 if (!res.ok) {
 throw new Error(
-"POST 실패: " +
+"ntfy POST 실패: " +
 res.status +
 " " +
 res.statusText +
@@ -135,9 +161,8 @@ return { status: res.status, body: text };
 }
 
 async function postJson(url, obj) {
-const res = await fetch(url, {
+const res = await requestWithRedirect(url, {
 method: "POST",
-redirect: "follow",
 body: JSON.stringify(obj),
 headers: {
 "Content-Type": "application/json; charset=utf-8",
@@ -161,15 +186,15 @@ text.slice(0, 500)
 
 try {
 return JSON.parse(text);
-} catch {
+} catch (err) {
 return { ok: true, raw: text };
 }
 }
 
 async function main() {
-const SHEET_API = process.env.SHEET_API;
-const NTFY_TOPIC = process.env.NTFY_TOPIC;
-const SMH_APP_URL = process.env.SMH_APP_URL || "";
+const SHEET_API = String(process.env.SHEET_API || "").trim();
+const NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
+const SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
 
 if (!SHEET_API || !NTFY_TOPIC) {
 throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
@@ -183,12 +208,14 @@ const now = kstNow();
 const today = ymd(now);
 
 const sentKeys = new Set(
-logs.map((l) => String(l.key || l["key"] || "").trim()).filter(Boolean)
+logs
+.map(function (l) {
+return String(l.key || l["key"] || "").trim();
+})
+.filter(Boolean)
 );
 
-let sentCount = 0;
-
-const timedEvents = rows.filter((r) => {
+const timedEvents = rows.filter(function (r) {
 const date = normalizeDate(r["날짜"]);
 const time = normalizeTime(r["시간"]);
 const status = String(r["상태"] || "").trim();
@@ -199,12 +226,17 @@ return date === today && status !== "완료" && time;
 
 });
 
+let sentCount = 0;
+
 for (const r of timedEvents) {
 const date = normalizeDate(r["날짜"]);
 const timeStr = normalizeTime(r["시간"]);
 
 ```
-const [hh, mm] = timeStr.split(":").map(Number);
+const parts = timeStr.split(":").map(Number);
+const hh = parts[0];
+const mm = parts[1];
+
 if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
 
 const eventTime = new Date(now);
@@ -216,13 +248,13 @@ const diffMin = (eventTime - now) / 60000;
 if (diffMin < 25 || diffMin > 35) continue;
 
 const eventId = String(
-  r["일정ID"] || `${date}_${timeStr}_${r["현장명"] || ""}`
+  r["일정ID"] || (date + "_" + timeStr + "_" + (r["현장명"] || ""))
 ).trim();
 
-const upcomingKey = `upcoming:${eventId}:${date}:${timeStr}`;
+const upcomingKey = "upcoming:" + eventId + ":" + date + ":" + timeStr;
 
 if (sentKeys.has(upcomingKey)) {
-  console.log("이미 발송됨:", upcomingKey);
+  console.log("이미 발송됨: " + upcomingKey);
   continue;
 }
 
@@ -232,6 +264,7 @@ const kind = r["구분"] ? "[" + String(r["구분"]).trim() + "] " : "";
 const memo = r["메모"] ? "\n메모: " + String(r["메모"]).trim() : "";
 
 const title = "곧 일정: " + timeStr + " " + site;
+
 let body =
   "⏰ " +
   Math.round(diffMin) +
@@ -262,31 +295,33 @@ const ntfyRes = await postText(
   ntfyHeaders
 );
 
-console.log("ntfy 응답:", ntfyRes.status, title);
+console.log("ntfy 응답: " + ntfyRes.status + " / " + title);
 
 const logRes = await postJson(SHEET_API, {
   action: "appendNotificationLog",
   log: {
     key: upcomingKey,
     type: "upcoming",
-    eventId,
-    date,
+    eventId: eventId,
+    date: date,
     time: timeStr,
-    title,
-    body,
+    title: title,
+    body: body,
   },
 });
 
-console.log("로그 기록:", upcomingKey, JSON.stringify(logRes));
+console.log("로그 기록: " + upcomingKey + " / " + JSON.stringify(logRes));
+
+sentKeys.add(upcomingKey);
 sentCount++;
 ```
 
 }
 
-console.log(`30분 전 알림 체크 완료. 발송 ${sentCount}건.`);
+console.log("30분 전 알림 체크 완료. 발송 " + sentCount + "건.");
 }
 
-main().catch((e) => {
+main().catch(function (e) {
 console.error(e);
 process.exit(1);
 });
