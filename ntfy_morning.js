@@ -3,52 +3,52 @@
 // 선택 환경변수: SMH_APP_URL
 
 function pad(n) {
-return String(n).padStart(2, "0");
+  return String(n).padStart(2, "0");
 }
 
 function kstNow() {
-return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
 }
 
 function ymd(date) {
-return (
-date.getFullYear() +
-"-" +
-pad(date.getMonth() + 1) +
-"-" +
-pad(date.getDate())
-);
+  return (
+    date.getFullYear() +
+    "-" +
+    pad(date.getMonth() + 1) +
+    "-" +
+    pad(date.getDate())
+  );
 }
 
 function addQuery(url, key, value) {
-const u = new URL(url);
-u.searchParams.set(key, value);
-return u.toString();
+  const u = new URL(url);
+  u.searchParams.set(key, value);
+  return u.toString();
 }
 
 function normalizeDate(value) {
-if (!value) return "";
+  if (!value) return "";
 
-const s = String(value).trim();
+  const s = String(value).trim();
 
-if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
-const d = new Date(s);
-if (!Number.isNaN(d.getTime())) {
-const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return (
-k.getUTCFullYear() +
-"-" +
-pad(k.getUTCMonth() + 1) +
-"-" +
-pad(k.getUTCDate())
-);
-}
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) {
+    const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+    return (
+      k.getUTCFullYear() +
+      "-" +
+      pad(k.getUTCMonth() + 1) +
+      "-" +
+      pad(k.getUTCDate())
+    );
+  }
 
-const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-if (m) return m[1] + "-" + pad(m[2]) + "-" + pad(m[3]);
+  const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (m) return m[1] + "-" + pad(m[2]) + "-" + pad(m[3]);
 
-return s.slice(0, 10);
+  return s.slice(0, 10);
 }
 
 function normalizeTime(value) {
@@ -61,8 +61,7 @@ function normalizeTime(value) {
   if (m) return pad(m[1]) + ":" + pad(m[2]);
 
   // Google Sheets 시간 셀은 1899-12-30 계열 Date로 넘어올 수 있음.
-  // 이 경우 단순 +9시간을 하면 시간이 틀어지므로
-  // Asia/Seoul 기준으로 직접 포맷한다.
+  // 단순 +9시간을 하면 틀어질 수 있어서 Asia/Seoul 기준으로 직접 포맷.
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) {
     const parts = new Intl.DateTimeFormat("en-GB", {
@@ -87,249 +86,236 @@ function normalizeTime(value) {
 }
 
 function encodeNtfyHeader(value) {
-const s = String(value || "");
-return /^[\x00-\x7F]*$/.test(s)
-? s
-: "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
+  const s = String(value || "");
+  return /^[\x00-\x7F]*$/.test(s)
+    ? s
+    : "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
 }
 
 async function fetchJson(url) {
-const target = addQuery(url, "mode", "notificationData");
+  const target = addQuery(url, "mode", "notificationData");
 
-const res = await fetch(target, {
-method: "GET",
-redirect: "follow",
-headers: {
-Accept: "application/json",
-"User-Agent": "SMH-ntfy-actions"
-}
-});
+  const res = await fetch(target, {
+    method: "GET",
+    redirect: "follow",
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "SMH-ntfy-actions"
+    }
+  });
 
-const text = await res.text();
+  const text = await res.text();
 
-if (!res.ok) {
-throw new Error(
-"API 요청 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
-}
+  if (!res.ok) {
+    throw new Error(
+      "API 요청 실패: " +
+        res.status +
+        " " +
+        res.statusText +
+        "\n" +
+        text.slice(0, 500)
+    );
+  }
 
-try {
-return JSON.parse(text);
-} catch (err) {
-throw new Error("JSON parse 실패: " + text.slice(0, 500));
-}
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("JSON parse 실패: " + text.slice(0, 500));
+  }
 }
 
 async function postText(url, body, headers) {
-const res = await fetch(url, {
-method: "POST",
-redirect: "follow",
-body: String(body),
-headers: headers || {}
-});
+  const res = await fetch(url, {
+    method: "POST",
+    redirect: "follow",
+    body: String(body),
+    headers: headers || {}
+  });
 
-const text = await res.text();
+  const text = await res.text();
 
-if (!res.ok) {
-throw new Error(
-"ntfy POST 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
-}
+  if (!res.ok) {
+    throw new Error(
+      "ntfy POST 실패: " +
+        res.status +
+        " " +
+        res.statusText +
+        "\n" +
+        text.slice(0, 500)
+    );
+  }
 
-return { status: res.status, body: text };
+  return { status: res.status, body: text };
 }
 
 async function postJson(url, obj) {
-const res = await fetch(url, {
-method: "POST",
-redirect: "follow",
-body: JSON.stringify(obj),
-headers: {
-"Content-Type": "application/json; charset=utf-8",
-Accept: "application/json",
-"User-Agent": "SMH-ntfy-actions"
-}
-});
+  const res = await fetch(url, {
+    method: "POST",
+    redirect: "follow",
+    body: JSON.stringify(obj),
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      Accept: "application/json",
+      "User-Agent": "SMH-ntfy-actions"
+    }
+  });
 
-const text = await res.text();
+  const text = await res.text();
 
-if (!res.ok) {
-throw new Error(
-"로그 기록 POST 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
-}
+  if (!res.ok) {
+    throw new Error(
+      "로그 기록 POST 실패: " +
+        res.status +
+        " " +
+        res.statusText +
+        "\n" +
+        text.slice(0, 500)
+    );
+  }
 
-try {
-return JSON.parse(text);
-} catch (err) {
-return { ok: true, raw: text };
-}
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return { ok: true, raw: text };
+  }
 }
 
 async function main() {
-const SHEET_API = String(process.env.SHEET_API || "").trim();
-const NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
-const SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
+  const SHEET_API = String(process.env.SHEET_API || "").trim();
+  const NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
+  const SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
 
-if (!SHEET_API || !NTFY_TOPIC) {
-throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
-}
+  if (!SHEET_API || !NTFY_TOPIC) {
+    throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
+  }
 
-const data = await fetchJson(SHEET_API);
-const rows = data["일정"] || [];
-const logs = data["알림로그"] || [];
+  const data = await fetchJson(SHEET_API);
+  const rows = data["일정"] || [];
+  const logs = data["알림로그"] || [];
 
-const now = kstNow();
-const today = ymd(now);
+  const now = kstNow();
+  const today = ymd(now);
 
-const morningKey = "morning_" + today;
+  const morningKey = "morning_" + today;
 
-const sentKeys = new Set(
-logs
-.map(function (l) {
-return String(l.key || l["key"] || "").trim();
-})
-.filter(Boolean)
-);
+  const sentKeys = new Set(
+    logs
+      .map(function (l) {
+        return String(l.key || l["key"] || "").trim();
+      })
+      .filter(Boolean)
+  );
 
-if (sentKeys.has(morningKey)) {
-console.log("이미 발송됨: " + morningKey);
-return;
-}
+  if (sentKeys.has(morningKey)) {
+    console.log("이미 발송됨: " + morningKey);
+    return;
+  }
 
-const todayEvents = rows
-.filter(function (r) {
-const date = normalizeDate(r["날짜"]);
-const status = String(r["상태"] || "").trim();
-return date === today && status !== "완료";
-})
-.sort(function (a, b) {
-const ta = normalizeTime(a["시간"]) || "99:99";
-const tb = normalizeTime(b["시간"]) || "99:99";
-if (ta > tb) return 1;
-if (ta < tb) return -1;
-return 0;
-});
+  const todayEvents = rows
+    .filter(function (r) {
+      const date = normalizeDate(r["날짜"]);
+      const status = String(r["상태"] || "").trim();
+      return date === today && status !== "완료";
+    })
+    .sort(function (a, b) {
+      const ta = normalizeTime(a["시간"]) || "99:99";
+      const tb = normalizeTime(b["시간"]) || "99:99";
+      if (ta > tb) return 1;
+      if (ta < tb) return -1;
+      return 0;
+    });
 
-const overdueEvents = rows.filter(function (r) {
-const date = normalizeDate(r["날짜"]);
-const status = String(r["상태"] || "").trim();
-return date && date < today && status !== "완료";
-});
+  const overdueEvents = rows.filter(function (r) {
+    const date = normalizeDate(r["날짜"]);
+    const status = String(r["상태"] || "").trim();
+    return date && date < today && status !== "완료";
+  });
 
-if (!todayEvents.length && !overdueEvents.length) {
-console.log("오늘 일정 없음 / 확인 필요 없음 — 알림 생략");
-return;
-}
+  if (!todayEvents.length && !overdueEvents.length) {
+    console.log("오늘 일정 없음 / 확인 필요 없음 — 알림 생략");
+    return;
+  }
 
-const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
-const todayLabel =
-now.getMonth() + 1 + "월 " + now.getDate() + "일 (" + dayNames[now.getDay()] + ")";
+  const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+  const shortDateLabel =
+    now.getMonth() + 1 + "/" + now.getDate() + "(" + dayNames[now.getDay()] + ")";
 
-const titleParts = [];
-if (todayEvents.length) titleParts.push("오늘 " + todayEvents.length + "건");
-if (overdueEvents.length) titleParts.push("확인필요 " + overdueEvents.length + "건");
+  const title = shortDateLabel + " 일정 · 오늘 " + todayEvents.length + "건";
 
-const title = "SMH 오늘 일정 · " + todayLabel + " · " + titleParts.join(" · ");
+  const lines = [];
 
-const lines = [];
+  if (todayEvents.length) {
+    todayEvents.forEach(function (r) {
+      const time = normalizeTime(r["시간"]);
+      const timeLabel = time ? time + " " : "종일 ";
+      const site = String(r["현장명"] || "").trim();
+      const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
+      const kind = r["구분"] ? " [" + String(r["구분"]).trim() + "]" : "";
+      const memo = r["메모"] ? " / " + String(r["메모"]).trim() : "";
 
-if (todayEvents.length) {
-lines.push("📅 오늘 일정");
+      lines.push(timeLabel + site + desc + kind + memo);
+    });
+  } else {
+    lines.push("오늘 일정 없음");
+  }
 
+  if (overdueEvents.length) {
+    lines.push("");
+    lines.push("⚠️ 미완료 지난 일정 " + overdueEvents.length + "건");
 
-todayEvents.forEach(function (r) {
-  const time = normalizeTime(r["시간"]);
-  const timeLabel = time ? time + " " : "종일 ";
-  const site = String(r["현장명"] || "").trim();
-  const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-  const kind = r["구분"] ? " [" + String(r["구분"]).trim() + "]" : "";
-  const memo = r["메모"] ? " / " + String(r["메모"]).trim() : "";
+    overdueEvents.slice(0, 5).forEach(function (r) {
+      const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
+      const site = String(r["현장명"] || "").trim();
+      const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
+      lines.push(date + " " + site + desc);
+    });
 
-  lines.push(timeLabel + site + desc + kind + memo);
-});
+    if (overdueEvents.length > 5) {
+      lines.push("... 외 " + (overdueEvents.length - 5) + "건");
+    }
+  }
 
+  if (SMH_APP_URL) {
+    lines.push("");
+    lines.push("열기: " + SMH_APP_URL);
+  }
 
-} else {
-lines.push("📅 오늘 일정 없음");
-}
+  const body = lines.join("\n");
 
-if (overdueEvents.length) {
-lines.push("");
-lines.push("⚠️ 미완료 지난 일정 " + overdueEvents.length + "건");
+  const ntfyHeaders = {
+    Title: encodeNtfyHeader(title),
+    Priority: "3",
+    "Content-Type": "text/plain; charset=utf-8"
+  };
 
+  if (SMH_APP_URL) {
+    ntfyHeaders.Click = SMH_APP_URL;
+  }
 
-overdueEvents.slice(0, 5).forEach(function (r) {
-  const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
-  const site = String(r["현장명"] || "").trim();
-  const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-  lines.push(date + " " + site + desc);
-});
+  const ntfyRes = await postText(
+    "https://ntfy.sh/" + encodeURIComponent(NTFY_TOPIC),
+    body,
+    ntfyHeaders
+  );
 
-if (overdueEvents.length > 5) {
-  lines.push("... 외 " + (overdueEvents.length - 5) + "건");
-}
+  console.log("ntfy 응답: " + ntfyRes.status + " / " + title);
 
+  const logRes = await postJson(SHEET_API, {
+    action: "appendNotificationLog",
+    log: {
+      key: morningKey,
+      type: "morning",
+      date: today,
+      title: title,
+      body: body
+    }
+  });
 
-}
-
-if (SMH_APP_URL) {
-lines.push("");
-lines.push("열기: " + SMH_APP_URL);
-}
-
-const body = lines.join("\n");
-
-const ntfyHeaders = {
-Title: encodeNtfyHeader(title),
-Priority: "3",
-Tags: "calendar",
-"Content-Type": "text/plain; charset=utf-8"
-};
-
-if (SMH_APP_URL) {
-ntfyHeaders.Click = SMH_APP_URL;
-}
-
-const ntfyRes = await postText(
-"https://ntfy.sh/" + encodeURIComponent(NTFY_TOPIC),
-body,
-ntfyHeaders
-);
-
-console.log("ntfy 응답: " + ntfyRes.status + " / " + title);
-
-const logRes = await postJson(SHEET_API, {
-action: "appendNotificationLog",
-log: {
-key: morningKey,
-type: "morning",
-date: today,
-title: title,
-body: body
-}
-});
-
-console.log("로그 기록: " + morningKey + " / " + JSON.stringify(logRes));
-console.log("아침 요약 알림 완료: " + title);
+  console.log("로그 기록: " + morningKey + " / " + JSON.stringify(logRes));
+  console.log("아침 요약 알림 완료: " + title);
 }
 
 main().catch(function (e) {
-console.error(e);
-process.exit(1);
+  console.error(e);
+  process.exit(1);
 });
