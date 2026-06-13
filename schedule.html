@@ -489,12 +489,20 @@ async function syncFromSheet(){
     const res=await fetch(SHEET_API);
     const j=await res.json();
     if(j.일정){DATA=j.일정.map(rowToEvent);localStorage.setItem(STORE,JSON.stringify(DATA));}
-    if(j.현장){
+    if(Array.isArray(j.현장)){
+      // 시트 데이터로 완전히 교체 (기존 키 전부 삭제 후 재구성)
+      Object.keys(SITE_INFO).forEach(k=>delete SITE_INFO[k]);
       j.현장.forEach(r=>{
         const s=rowToSite(r);if(!s.name)return;
-        const ex=SITE_INFO[s.name]||{};
-        SITE_INFO[s.name]={customer:s.customer,note:s.note||ex.note||"",hidden:s.hidden||false};
+        SITE_INFO[s.name]={customer:s.customer,note:s.note||"",hidden:s.hidden||false};
       });
+      // SITE_ORDER도 시트에 없는 현장은 제거
+      const savedOrder=loadSiteOrder();
+      if(savedOrder){
+        const validNames=new Set(Object.keys(SITE_INFO));
+        const filtered=savedOrder.filter(n=>validNames.has(n));
+        saveSiteOrder(filtered);
+      }
     }
     if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
     setSync("ok");render();
