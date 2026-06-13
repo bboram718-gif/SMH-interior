@@ -165,6 +165,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .site-move{background:none;border:none;padding:3px 6px;font-size:11px;color:var(--ink3);cursor:pointer;border-radius:4px;line-height:1}
 .site-move:hover:not(:disabled){color:var(--gold);background:var(--gold-bg)}
 .site-move:disabled{opacity:0.2;cursor:default}
+.site-hide{background:none;border:none;padding:3px 6px;font-size:13px;color:var(--ink3);cursor:pointer;border-radius:4px;line-height:1;opacity:0.4}
+.site-hide:hover{opacity:1;background:#fee}
 .cust-chevron{font-size:11px;color:var(--ink3);margin-left:4px;display:inline-block;transition:transform .2s}
 .cust.open .cust-chevron{transform:rotate(180deg)}
 .cust-body{border-top:1px solid var(--line);display:none;padding:0 0 10px}
@@ -465,10 +467,10 @@ function eventToRow(e){
 }
 function rowToSite(r){
   return {name:String(r["현장명"]||""),customer:String(r["고객명"]||""),
-    note:String(r["노트"]||"")};
+    note:String(r["노트"]||""),hidden:String(r["숨김"]||"").toLowerCase()==="true"};
 }
 function siteToRow(name,info){
-  return {"현장명":name,"고객명":info.customer||"","노트":info.note||""};
+  return {"현장명":name,"고객명":info.customer||"","노트":info.note||"","숨김":info.hidden?"true":""};
 }
 function rowToTodo(r){
   const subRaw=String(r["하위메모"]||"");
@@ -494,7 +496,7 @@ async function syncFromSheet(){
       j.현장.forEach(r=>{
         const s=rowToSite(r);if(!s.name)return;
         const ex=SITE_INFO[s.name]||{};
-        SITE_INFO[s.name]={customer:s.customer,note:s.note||ex.note||""};
+        SITE_INFO[s.name]={customer:s.customer,note:s.note||ex.note||"",hidden:s.hidden||false};
       });
     }
     if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
@@ -761,10 +763,12 @@ function renderCust(){
   allNames.forEach(n=>{if(!order.includes(n))order.push(n);});
   order=order.filter(n=>allNames.includes(n));
   const q=custQuery.trim().toLowerCase();
-  const filtered=q?order.filter(name=>{
+  // 숨긴 현장 제외 (검색 중에는 보여줌)
+  const visible=q?order:order.filter(name=>!SITE_INFO[name]?.hidden);
+  const filtered=q?visible.filter(name=>{
     const evs=map[name]||[];const info=findInfo(name);
     return [name,info?.customer,info?.note,...evs.map(e=>e.desc+" "+e.memo)].join(" ").toLowerCase().includes(q);
-  }):order;
+  }):visible;
   let html=`<input class="search" id="custSearch" placeholder="현장명, 고객명, 메모 검색" value="${custQuery}">`;
   filtered.forEach((name,idx)=>{
     const evs=(map[name]||[]).sort((a,b)=>a.date<b.date?-1:1);
@@ -777,12 +781,13 @@ function renderCust(){
     html+=`<div class="cust" id="cust-${cssid(name)}">
       <div class="cust-header" data-cust="${ss}">
         <div class="cust-info">
-          <div class="cust-name">${name}</div>
+          <div class="cust-name">${name}${info?.hidden?` <span style="font-size:11px;color:var(--ink3);font-weight:400">(숨김)</span>`:"" }</div>
           <div class="cust-sub">${meta?meta+" · ":""}최근: ${recent}</div>
         </div>
         <div class="cust-actions">
           <button class="site-move" data-dir="up" data-site="${ss}"${first?" disabled":""}>▲</button>
           <button class="site-move" data-dir="down" data-site="${ss}"${last?" disabled":""}>▼</button>
+          <button class="site-hide" data-site="${ss}" title="숨기기">🗑</button>
           <span class="cust-chevron">▾</span>
         </div>
       </div>
@@ -969,6 +974,14 @@ V.addEventListener("click",e=>{
   }
   const mv=e.target.closest(".site-move");
   if(mv){e.stopPropagation();moveSite(mv.dataset.site,mv.dataset.dir);return;}
+  const sh=e.target.closest(".site-hide");
+  if(sh){e.stopPropagation();
+    const name=sh.dataset.site;
+    if(!confirm(`"${name}" 현장을 숨길까요?\n앱에서는 안 보이고 시트에서는 확인할 수 있어요.`))return;
+    if(!SITE_INFO[name])SITE_INFO[name]={note:""};
+    SITE_INFO[name].hidden=true;
+    pushSitesToSheet();render();return;
+  }
   const ch=e.target.closest(".cust-header");
   if(ch){const name=ch.dataset.cust;const card=document.getElementById("cust-"+cssid(name));
     const b=document.getElementById("cb-"+cssid(name));
