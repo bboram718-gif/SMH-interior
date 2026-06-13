@@ -6,283 +6,218 @@ function pad(n) {
 return String(n).padStart(2, "0");
 }
 
-function kstNow() {
+function kstDate() {
 return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
 }
 
-function ymd(date) {
-return (
-date.getFullYear() +
-"-" +
-pad(date.getMonth() + 1) +
-"-" +
-pad(date.getDate())
-);
+function ymd(d) {
+return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 }
 
-function addQuery(url, key, value) {
-const u = new URL(url);
-u.searchParams.set(key, value);
+function addMode(url) {
+var u = new URL(url);
+u.searchParams.set("mode", "notificationData");
 return u.toString();
 }
 
-function normalizeDate(value) {
-if (!value) return "";
-
-const s = String(value).trim();
+function normDate(v) {
+if (!v) return "";
+var s = String(v).trim();
 
 if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
-const d = new Date(s);
-if (!Number.isNaN(d.getTime())) {
-const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return (
-k.getUTCFullYear() +
-"-" +
-pad(k.getUTCMonth() + 1) +
-"-" +
-pad(k.getUTCDate())
-);
+var d = new Date(s);
+if (!isNaN(d.getTime())) {
+var k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+return k.getUTCFullYear() + "-" + pad(k.getUTCMonth() + 1) + "-" + pad(k.getUTCDate());
 }
-
-const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-if (m) return m[1] + "-" + pad(m[2]) + "-" + pad(m[3]);
 
 return s.slice(0, 10);
 }
 
-function normalizeTime(value) {
-if (!value) return "";
+function normTime(v) {
+if (!v) return "";
+var s = String(v).trim();
 
-const s = String(value).trim();
-
-const m = s.match(/^(\d{1,2}):(\d{2})/);
+var m = s.match(/^(\d{1,2}):(\d{2})/);
 if (m) return pad(m[1]) + ":" + pad(m[2]);
 
-const d = new Date(s);
-if (!Number.isNaN(d.getTime())) {
-const k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+var d = new Date(s);
+if (!isNaN(d.getTime())) {
+var k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
 return pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
 }
 
 return "";
 }
 
-function encodeNtfyHeader(value) {
-const s = String(value || "");
-return /^[\x00-\x7F]*$/.test(s)
-? s
-: "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
+function ntfyHeader(v) {
+var s = String(v || "");
+if (/^[\x00-\x7F]*$/.test(s)) return s;
+return "=?UTF-8?B?" + Buffer.from(s, "utf8").toString("base64") + "?=";
 }
 
-async function fetchJson(url) {
-const target = addQuery(url, "mode", "notificationData");
-
-const res = await fetch(target, {
+async function getJson(url) {
+var res = await fetch(addMode(url), {
 method: "GET",
 redirect: "follow",
 headers: {
-Accept: "application/json",
+"Accept": "application/json",
 "User-Agent": "SMH-ntfy-actions"
 }
 });
 
-const text = await res.text();
+var text = await res.text();
 
 if (!res.ok) {
-throw new Error(
-"API 요청 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
+throw new Error("API 요청 실패: " + res.status + "\n" + text.slice(0, 400));
 }
 
 try {
 return JSON.parse(text);
-} catch (err) {
-throw new Error("JSON parse 실패: " + text.slice(0, 500));
+} catch (e) {
+throw new Error("JSON parse 실패: " + text.slice(0, 400));
 }
 }
 
 async function postText(url, body, headers) {
-const res = await fetch(url, {
+var res = await fetch(url, {
 method: "POST",
 redirect: "follow",
 body: String(body),
 headers: headers || {}
 });
 
-const text = await res.text();
+var text = await res.text();
 
 if (!res.ok) {
-throw new Error(
-"ntfy POST 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
+throw new Error("ntfy POST 실패: " + res.status + "\n" + text.slice(0, 400));
 }
 
-return { status: res.status, body: text };
+return res.status;
 }
 
-async function postJson(url, obj) {
-const res = await fetch(url, {
+async function postLog(url, log) {
+var res = await fetch(url, {
 method: "POST",
 redirect: "follow",
-body: JSON.stringify(obj),
+body: JSON.stringify({
+action: "appendNotificationLog",
+log: log
+}),
 headers: {
 "Content-Type": "application/json; charset=utf-8",
-Accept: "application/json",
+"Accept": "application/json",
 "User-Agent": "SMH-ntfy-actions"
 }
 });
 
-const text = await res.text();
+var text = await res.text();
 
 if (!res.ok) {
-throw new Error(
-"로그 기록 POST 실패: " +
-res.status +
-" " +
-res.statusText +
-"\n" +
-text.slice(0, 500)
-);
+throw new Error("로그 기록 실패: " + res.status + "\n" + text.slice(0, 400));
 }
 
-try {
-return JSON.parse(text);
-} catch (err) {
-return { ok: true, raw: text };
-}
+return text;
 }
 
 async function main() {
-const SHEET_API = String(process.env.SHEET_API || "").trim();
-const NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
-const SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
+var SHEET_API = String(process.env.SHEET_API || "").trim();
+var NTFY_TOPIC = String(process.env.NTFY_TOPIC || "").trim();
+var SMH_APP_URL = String(process.env.SMH_APP_URL || "").trim();
 
-if (!SHEET_API || !NTFY_TOPIC) {
-throw new Error("SHEET_API / NTFY_TOPIC 환경변수 없음");
+if (!SHEET_API) throw new Error("SHEET_API 없음");
+if (!NTFY_TOPIC) throw new Error("NTFY_TOPIC 없음");
+
+var data = await getJson(SHEET_API);
+var rows = Array.isArray(data["일정"]) ? data["일정"] : [];
+var logs = Array.isArray(data["알림로그"]) ? data["알림로그"] : [];
+
+var sent = {};
+for (var a = 0; a < logs.length; a++) {
+var oldKey = String(logs[a]["key"] || "").trim();
+if (oldKey) sent[oldKey] = true;
 }
 
-const data = await fetchJson(SHEET_API);
-const rows = Array.isArray(data["일정"]) ? data["일정"] : [];
-const logs = Array.isArray(data["알림로그"]) ? data["알림로그"] : [];
+var now = kstDate();
+var today = ymd(now);
+var sentCount = 0;
+var checkedCount = 0;
 
-const now = kstNow();
-const today = ymd(now);
-
-const sentKeys = new Set();
-
-for (let i = 0; i < logs.length; i++) {
-const key = String(logs[i].key || logs[i]["key"] || "").trim();
-if (key) sentKeys.add(key);
-}
-
-let sentCount = 0;
-let checkedCount = 0;
-
-for (let i = 0; i < rows.length; i++) {
-const r = rows[i] || {};
+for (var i = 0; i < rows.length; i++) {
+var r = rows[i] || {};
 
 ```
-const date = normalizeDate(r["날짜"]);
-const timeStr = normalizeTime(r["시간"]);
-const status = String(r["상태"] || "").trim();
+var date = normDate(r["날짜"]);
+var time = normTime(r["시간"]);
+var status = String(r["상태"] || "").trim();
 
 if (date !== today) continue;
 if (status === "완료") continue;
-if (!timeStr) continue;
+if (!time) continue;
 
 checkedCount++;
 
-const parts = timeStr.split(":");
-const hh = Number(parts[0]);
-const mm = Number(parts[1]);
+var hm = time.split(":");
+var hh = Number(hm[0]);
+var mm = Number(hm[1]);
+if (isNaN(hh) || isNaN(mm)) continue;
 
-if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
-
-const eventTime = new Date(now);
+var eventTime = new Date(now);
 eventTime.setHours(hh, mm, 0, 0);
 
-const diffMin = (eventTime.getTime() - now.getTime()) / 60000;
+var diffMin = (eventTime.getTime() - now.getTime()) / 60000;
 
-// 현재 기준 25~35분 뒤 일정만 알림
 if (diffMin < 25 || diffMin > 35) continue;
 
-const eventId = String(
-  r["일정ID"] || (date + "_" + timeStr + "_" + (r["현장명"] || ""))
-).trim();
+var site = String(r["현장명"] || "일정").trim();
+var eventId = String(r["일정ID"] || date + "_" + time + "_" + site).trim();
+var key = "upcoming:" + eventId + ":" + date + ":" + time;
 
-const upcomingKey = "upcoming:" + eventId + ":" + date + ":" + timeStr;
-
-if (sentKeys.has(upcomingKey)) {
-  console.log("이미 발송됨: " + upcomingKey);
+if (sent[key]) {
+  console.log("이미 발송됨: " + key);
   continue;
 }
 
-const site = String(r["현장명"] || "일정").trim();
-const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-const kind = r["구분"] ? "[" + String(r["구분"]).trim() + "] " : "";
-const memo = r["메모"] ? "\n메모: " + String(r["메모"]).trim() : "";
+var desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
+var kind = r["구분"] ? "[" + String(r["구분"]).trim() + "] " : "";
+var memo = r["메모"] ? "\n메모: " + String(r["메모"]).trim() : "";
 
-const title = "곧 일정: " + timeStr + " " + site;
+var title = "곧 일정: " + time + " " + site;
+var body = "⏰ " + Math.round(diffMin) + "분 후\n" + kind + site + desc + memo;
 
-let body =
-  "⏰ " +
-  Math.round(diffMin) +
-  "분 후\n" +
-  kind +
-  site +
-  desc +
-  memo;
+if (SMH_APP_URL) body += "\n\n열기: " + SMH_APP_URL;
 
-if (SMH_APP_URL) {
-  body += "\n\n열기: " + SMH_APP_URL;
-}
-
-const ntfyHeaders = {
-  Title: encodeNtfyHeader(title),
-  Priority: "4",
-  Tags: "bell",
+var headers = {
+  "Title": ntfyHeader(title),
+  "Priority": "4",
+  "Tags": "bell",
   "Content-Type": "text/plain; charset=utf-8"
 };
 
-if (SMH_APP_URL) {
-  ntfyHeaders.Click = SMH_APP_URL;
-}
+if (SMH_APP_URL) headers["Click"] = SMH_APP_URL;
 
-const ntfyRes = await postText(
+var ntfyStatus = await postText(
   "https://ntfy.sh/" + encodeURIComponent(NTFY_TOPIC),
   body,
-  ntfyHeaders
+  headers
 );
 
-console.log("ntfy 응답: " + ntfyRes.status + " / " + title);
+console.log("ntfy 응답: " + ntfyStatus + " / " + title);
 
-const logRes = await postJson(SHEET_API, {
-  action: "appendNotificationLog",
-  log: {
-    key: upcomingKey,
-    type: "upcoming",
-    eventId: eventId,
-    date: date,
-    time: timeStr,
-    title: title,
-    body: body
-  }
+await postLog(SHEET_API, {
+  key: key,
+  type: "upcoming",
+  eventId: eventId,
+  date: date,
+  time: time,
+  title: title,
+  body: body
 });
 
-console.log("로그 기록: " + upcomingKey + " / " + JSON.stringify(logRes));
+console.log("로그 기록: " + key);
 
-sentKeys.add(upcomingKey);
+sent[key] = true;
 sentCount++;
 ```
 
