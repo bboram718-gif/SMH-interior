@@ -36,19 +36,38 @@ return s.slice(0, 10);
 }
 
 function normTime(v) {
-if (!v) return "";
-var s = String(v).trim();
+  if (!v) return "";
 
-var m = s.match(/^(\d{1,2}):(\d{2})/);
-if (m) return pad(m[1]) + ":" + pad(m[2]);
+  var s = String(v).trim();
 
-var d = new Date(s);
-if (!isNaN(d.getTime())) {
-var k = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-return pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
-}
+  // 이미 "01:35" 같은 문자열이면 그대로 사용
+  var m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (m) return pad(m[1]) + ":" + pad(m[2]);
 
-return "";
+  // Google Sheets의 시간 셀은 1899-12-30 계열 Date로 넘어올 수 있음.
+  // 이때 단순 +9시간을 하면 30분 정도 틀어질 수 있어서
+  // 반드시 Asia/Seoul 기준으로 포맷해야 함.
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    var parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(d);
+
+    var hh = "";
+    var mm = "";
+
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].type === "hour") hh = parts[i].value;
+      if (parts[i].type === "minute") mm = parts[i].value;
+    }
+
+    if (hh && mm) return hh + ":" + mm;
+  }
+
+  return "";
 }
 
 function ntfyHeader(v) {
