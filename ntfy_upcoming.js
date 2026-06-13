@@ -147,7 +147,7 @@ var checkedCount = 0;
 for (var i = 0; i < rows.length; i++) {
 var r = rows[i] || {};
 
-```
+
 var date = normDate(r["날짜"]);
 var time = normTime(r["시간"]);
 var status = String(r["상태"] || "").trim();
@@ -219,7 +219,7 @@ console.log("로그 기록: " + key);
 
 sent[key] = true;
 sentCount++;
-```
+
 
 }
 
