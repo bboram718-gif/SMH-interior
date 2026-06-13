@@ -11,11 +11,17 @@ morning-alert:
 name: 아침 요약 알림
 runs-on: ubuntu-latest
 if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * *'
-steps:
-- name: 코드 가져오기
-uses: actions/checkout@v4
 
 ```
+steps:
+  - name: 코드 가져오기
+    uses: actions/checkout@v4
+
+  - name: Node 준비
+    uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+
   - name: 아침 일정 요약 발송
     env:
       SHEET_API: ${{ secrets.SHEET_API }}
@@ -28,23 +34,18 @@ upcoming-alert:
 name: 30분 전 알림
 runs-on: ubuntu-latest
 if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
-steps:
-- name: 코드 가져오기
-uses: actions/checkout@v4
 
 ```
-  - name: 현재 실행 파일 확인
-    run: |
-      echo "현재 커밋"
-      git log -1 --oneline
-      echo "파일 목록"
-      ls -la
-      echo "ntfy_upcoming.js 주요 구문"
-      grep -n "rows.filter\|requestWithRedirect\|for (var i" ntfy_upcoming.js || true
-      echo "ntfy_upcoming.js 180-210줄"
-      nl -ba ntfy_upcoming.js | sed -n '180,210p'
+steps:
+  - name: 코드 가져오기
+    uses: actions/checkout@v4
 
-  - name: 30분 전 알림 체크
+  - name: Node 준비
+    uses: actions/setup-node@v4
+    with:
+      node-version: '22'
+
+  - name: 30분 전 알림 실행
     env:
       SHEET_API: ${{ secrets.SHEET_API }}
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
