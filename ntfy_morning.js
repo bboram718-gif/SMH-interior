@@ -82,6 +82,16 @@ function normalizeTime(value) {
   return "";
 }
 
+function splitTextLines(value) {
+  return String(value || "")
+    .replace(/\\n/g, "\n")
+    .split(/\r?\n/)
+    .map(function (line) {
+      return line.trim();
+    })
+    .filter(Boolean);
+}
+
 function encodeNtfyHeader(value) {
   const s = String(value || "");
   return /^[\x00-\x7F]*$/.test(s)
@@ -249,27 +259,27 @@ async function main() {
       const timeLabel = time ? time + " " : "종일 ";
       const site = String(r["현장명"] || "").trim();
 
-      const content = String(r["내용"] || "").trim();
-      const memoText = String(r["메모"] || "").trim();
+      const contentLines = splitTextLines(r["내용"]);
+      const memoLines = splitTextLines(r["메모"]);
 
-     lines.push(timeLabel + site);
+      lines.push(timeLabel + site);
 
-  if (content) {
-  lines.push("· " + content);
-}
+      contentLines.forEach(function (line) {
+        lines.push("• " + line);
+      });
 
-if (memoText) {
-  lines.push("  " + memoText);
-}
+      memoLines.forEach(function (line) {
+        lines.push("↳ " + line);
+      });
 
       if (index < todayEvents.length - 1) {
+        lines.push("");
         lines.push("────────");
       }
     });
   } else {
     lines.push("오늘 일정 없음");
   }
-
 
   if (overdueEvents.length) {
     lines.push("");
@@ -279,16 +289,17 @@ if (memoText) {
     overdueEvents.slice(0, 5).forEach(function (r, index) {
       const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
       const site = String(r["현장명"] || "").trim();
-      const content = String(r["내용"] || "").trim();
+      const contentLines = splitTextLines(r["내용"]);
 
       lines.push(date + " " + site);
 
-      if (content) {
-        lines.push("  " + content);
-      }
+      contentLines.forEach(function (line) {
+        lines.push("• " + line);
+      });
 
       if (index < Math.min(overdueEvents.length, 5) - 1) {
         lines.push("");
+        lines.push("────────");
       }
     });
 
