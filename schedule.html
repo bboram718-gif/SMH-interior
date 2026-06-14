@@ -19,6 +19,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   background:var(--bg);color:var(--ink);line-height:1.5;font-size:15px;padding-bottom:90px}
 .wrap{max-width:1000px;margin:0 auto;padding:0 14px}
+
 /* header */
 .top{position:sticky;top:0;z-index:30;background:var(--bg);padding:14px 0 8px;border-bottom:1px solid var(--line)}
 .top h1{font-size:17px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:7px}
@@ -29,6 +30,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .tab{flex:1;text-align:center;padding:9px 4px;font-size:14px;font-weight:500;color:var(--ink2);
   background:transparent;border:none;border-radius:8px;cursor:pointer;transition:.15s}
 .tab.on{background:var(--black);color:#fff}
+
 /* nav row */
 .nav{display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px;flex-wrap:wrap;gap:8px}
 .nav .arrows{display:flex;gap:6px}
@@ -41,6 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
   padding:8px 13px;font-size:14px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .addbar:hover{background:var(--gray-bg)}
 .addbar:active{transform:scale(.98)}
+
 /* 2-week board */
 .board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
 .weekband{margin-bottom:6px;font-size:12px;color:var(--ink3);font-weight:600;padding-left:2px}
@@ -65,6 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .bev.기타{background:var(--gray-bg);color:var(--ink2)}
 .bmore{font-size:10.5px;color:var(--ink3);margin-top:auto;padding-top:3px}
 .scrollhint{display:none;font-size:11.5px;color:var(--ink3);text-align:center;margin:-4px 0 8px}
+
 /* weekly memo */
 .wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:-6px 0 18px}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
@@ -78,6 +82,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .wmemo-add{font-size:12.5px;color:var(--gold);cursor:pointer;font-weight:500;padding:5px 0 0;display:inline-flex;gap:4px;align-items:center}
 .wmemo-add:hover{text-decoration:underline}
 .wmemo-empty{font-size:12.5px;color:var(--ink3);padding:2px 0}
+
 /* attention - collapsed bar at bottom */
 .attn-bar{margin:4px 0 10px;border:1px solid #ecd9b3;background:var(--warn-bg);border-radius:10px;overflow:hidden}
 .attn-toggle{padding:11px 15px;font-size:13.5px;font-weight:600;color:var(--warn);cursor:pointer;
@@ -91,6 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .attn-check{border:1px solid var(--warn);background:transparent;color:var(--warn);
   border-radius:7px;padding:5px 11px;font-size:12.5px;cursor:pointer;font-weight:500;white-space:nowrap}
 .attn-check:hover{background:#fff}
+
 /* month */
 .cal{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px;touch-action:pan-y}
 .dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
@@ -115,6 +121,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .ev.공사{background:var(--coral-bg);color:var(--coral)}
 .ev.기타{background:var(--gray-bg);color:var(--ink2)}
 .ev-more{font-size:9px;color:var(--ink3);padding:1px 3px;margin-top:1px}
+
 /* today cards */
 .tcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
   margin-bottom:10px;display:flex;gap:13px;transition:.1s}
@@ -132,6 +139,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
   padding:7px 13px;font-size:13px;cursor:pointer;font-weight:500;color:var(--ink2);white-space:nowrap}
 .tcheck.is-done{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
 .tcheck:hover{border-color:var(--teal)}
+
 /* shared list row (week list fallback / day list) */
 .daygroup{margin-top:14px}
 .dayhead{font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:6px}
@@ -142,6 +150,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .tag.공사{background:var(--coral-bg);color:var(--coral)}
 .tag.기타{background:var(--gray-bg);color:var(--ink2)}
 .empty{text-align:center;color:var(--ink3);font-size:14px;padding:34px 0}
+
 /* customer */
 .search{width:100%;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;
   font-size:15px;background:var(--card);margin:8px 0 14px;font-family:inherit;color:var(--ink)}
@@ -172,12 +181,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .memo .ml{display:block;padding-left:12px;position:relative}
 .memo .ml:before{content:"·";position:absolute;left:2px;color:var(--gold)}
 .mini-ev{font-size:12.5px;padding:6px 14px;border-top:1px solid var(--line);display:flex;gap:8px;cursor:pointer}
-.mini-ev .md{color:var(--ink3);min-width:78px}
+.mini-ev .md{color:var(--ink3);min-width:96px}
+
 /* FAB */
 .fab{position:fixed;right:18px;bottom:22px;width:58px;height:58px;border-radius:50%;
   background:var(--black);color:var(--gold);border:none;font-size:30px;cursor:pointer;z-index:40;
   box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;line-height:1}
 .fab:active{transform:scale(.94)}
+
 /* modal */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
 .ov.show{display:flex}
@@ -210,6 +221,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .site-ac-item{padding:11px 14px;font-size:15px;cursor:pointer;border-bottom:1px solid var(--line)}
 .site-ac-item:last-child{border-bottom:none}
 .site-ac-item:active,.site-ac-item:hover{background:var(--bg)}
+
 /* detail view modal */
 .dv-kind{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px;margin-bottom:8px}
 .dv-kind.미팅{background:var(--blue-bg);color:var(--blue)}
@@ -222,6 +234,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .dv-l{color:var(--ink3);min-width:46px;flex-shrink:0;font-size:13px}
 .dv-v{color:var(--ink);flex:1;line-height:1.55;white-space:pre-wrap}
 .dv-v.done{color:var(--teal);font-weight:600}
+
 /* day list */
 .dl-row{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
 .dl-row:first-child{border-top:none}
@@ -232,6 +245,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .dl-site{font-size:15px;font-weight:600}
 .dl-desc{font-size:13px;color:var(--ink2);margin-top:1px}
 .dl-row.done .dl-site{text-decoration:line-through;opacity:.55}
+
 /* todo */
 .paste-box{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:8px 0 14px;overflow:hidden}
 .paste-h{padding:12px 15px;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:7px}
@@ -247,6 +261,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .preview-h{font-size:12.5px;font-weight:600;color:var(--gold);margin-bottom:8px}
 .pv-item{font-size:13.5px;padding:4px 0;color:var(--ink2)}
 .pv-item .pv-sub{display:block;padding-left:14px;color:var(--ink3);font-size:12.5px}
+
 .todo-sec{font-size:12px;color:var(--ink3);font-weight:600;margin:16px 0 6px;padding-left:2px}
 .todo-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
   margin-bottom:7px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:.1s}
@@ -286,7 +301,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
   <div id="view"></div>
   <div class="hint" id="bottomhint"></div>
 </div>
+
 <button class="fab" id="addBtn">+</button>
+
 <div class="ov" id="dayov">
   <div class="sheet">
     <h2 id="dayTitle" style="margin-bottom:12px"></h2>
@@ -294,6 +311,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <div class="hint" id="dayClose" style="cursor:pointer;margin-top:14px">닫기</div>
   </div>
 </div>
+
 <div class="ov" id="dov">
   <div class="sheet">
     <div class="dv-kind" id="dvKind"></div>
@@ -314,6 +332,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <div class="hint" id="dvClose" style="cursor:pointer;margin-top:12px">닫기</div>
   </div>
 </div>
+
 <div class="ov" id="tov">
   <div class="sheet">
     <h2 id="tvTitle" style="margin-bottom:14px"></h2>
@@ -340,6 +359,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <div class="hint" id="tvClose" style="cursor:pointer;margin-top:12px">닫기</div>
   </div>
 </div>
+
 <div class="ov" id="ov">
   <div class="sheet">
     <h2 id="mTitle">일정 추가</h2>
@@ -372,9 +392,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     </div>
   </div>
 </div>
+
 <script>
 const DOW=["일","월","화","수","목","금","토"];
 const STORE="smh_schedule_v2";
+
 const SEED=[
   {id:1,date:"2026-06-12",time:"10:30",site:"필복싱",desc:"방문",kind:"미팅",status:"예정",memo:""},
   {id:2,date:"2026-06-12",time:"12:30",site:"원복철거",desc:"상세 실측",kind:"실측",status:"예정",memo:""},
@@ -399,6 +421,7 @@ const SEED=[
   {id:21,date:"",week:"2026-06-07",time:"",site:"임스네일",desc:"견적 정리 전달",kind:"견적",status:"예정",memo:""},
   {id:22,date:"",week:"2026-06-14",time:"",site:"재훈형님",desc:"템바 마감 확인",kind:"공사",status:"예정",memo:""},
 ];
+
 const SITE_INFO={
   "필복싱":{customer:"",note:"짐 신내역점 부분 견적\n기존 간접등 제거 / 레일 조명으로 조도 확보\n샤워장 가벽 확장 후 샤워부스 최대 4개 / 호실별 사용 구조"},
   "성은교회":{customer:"",note:"주차장~외부 공간 사용 희망\n1차 누수 보수 급선무, 내부 창고 공간 분리 후 방수\n창고 분리[도어] / 천장 보수 후 도장\n조명 교체 / 페인트 손상부 보수\n렉산·유리창 노후부 필름 정리, 알루미늄 프레임 유지\n바닥 우레탄 도장 상태, 데코타일 등 시공 희망\n주차장 셔터 철거 후 도어 정리 희망"},
@@ -407,6 +430,7 @@ const SITE_INFO={
   "신촌푸르지오 44A":{customer:"신애님",note:"4인가구(6세·2세) / 9월10일~ 2개월 / 11월 입주\n개방감 있게, 따뜻한 화이트, 청소 적은 스타일\n안방화장실 확장 욕조+건식+놀이공간 / 거실화장실 조적 샤워부스\n가구: 세로 붙박이장, 안방 가로 붙박이장, 화장대 X\n안방 놀이방 슬라이딩 도어 / 시스템 에어컨 단내림\n주방 대면형 아일랜드, 세라믹 상판, 냉장고 2통\n중문 개방감 / 원목마루 희망(예산 따라) / 디아망 느낌 도배"},
   "원복철거":{customer:"탑부동산",note:"솔밭공원 옆 970평 철거 (지하~4층, 이마트 제외 전체)\n스프링쿨러·소방 기본배선 남기고 철거\n메인 분전반 제외 전체 철거\nB1~2층 엘베 유지 / 지하 펌프실·기계실 유지\n외부 CCTV·이마트 설비 피해 최소화 / 바닥 전부 철거"},
 };
+
 const TODO_STORE="smh_todos_v1";
 const TODO_SEED=[
   {id:101,text:"EK이종환 이사님 요청사항 전달",site:"EK이종환",sub:["계단 제작 요청"],kind:"기타",done:false},
@@ -418,23 +442,28 @@ const TODO_SEED=[
   {id:107,text:"성은교회 / 열린문 교회",site:"성은교회",sub:[],kind:"기타",done:false},
   {id:108,text:"필복싱짐",site:"필복싱",sub:["6M × 9M"],kind:"실측",done:false},
 ];
+
 let DATA=load();
 let TODOS=loadTodos();
 let view="board";
 let cur=new Date();
 let editId=null;
 let custQuery="";
+
 function load(){try{const s=localStorage.getItem(STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(STORE,JSON.stringify(SEED));return JSON.parse(JSON.stringify(SEED));}
 function save(){localStorage.setItem(STORE,JSON.stringify(DATA));pushToSheet();}
 function loadTodos(){try{const s=localStorage.getItem(TODO_STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(TODO_STORE,JSON.stringify(TODO_SEED));return JSON.parse(JSON.stringify(TODO_SEED));}
 function saveTodos(){localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));pushTodosToSheet();}
+
 /* ===== 구글 시트 동기화 ===== */
 const SHEET_API="https://script.google.com/macros/s/AKfycbxpVomFCLHKyph4mm9G50tPH96OTDM0IA7ZiLl_M21oxbA2BVisv6i3-3gTsN6PDzFLqA/exec";
-let syncState="";
+let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
+
+// 시트 날짜/시간 → 로컬 변환 (getHours/getDate 사용: 브라우저 로컬타임 = KST)
 function normDate(v){
   if(!v)return"";
   if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
@@ -447,6 +476,7 @@ function normTime(v){
   const d=new Date(v);if(isNaN(d))return typeof v==="string"?v:"";
   return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 }
+// 시트행(한글키) → 앱객체(영문키)
 function rowToEvent(r){
   return {id:Number(r["일정ID"])||Date.now()+Math.random(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     site:String(r["현장명"]||""),desc:String(r["내용"]||""),kind:String(r["구분"]||"기타"),
@@ -477,6 +507,7 @@ function todoToRow(t){
     "하위메모":(t.sub||[]).join("|"),"상세":t.desc||"","메모":t.memo||"","구분":t.kind||"기타",
     "완료":t.done?"true":"false","승격여부":t.promoted?"true":"false"};
 }
+
 async function syncFromSheet(){
   setSync("loading");
   try{
@@ -484,11 +515,13 @@ async function syncFromSheet(){
     const j=await res.json();
     if(j.일정){DATA=j.일정.map(rowToEvent);localStorage.setItem(STORE,JSON.stringify(DATA));}
     if(Array.isArray(j.현장)){
+      // 시트 데이터로 완전히 교체 (기존 키 전부 삭제 후 재구성)
       Object.keys(SITE_INFO).forEach(k=>delete SITE_INFO[k]);
       j.현장.forEach(r=>{
         const s=rowToSite(r);if(!s.name)return;
         SITE_INFO[s.name]={customer:s.customer,note:s.note||"",hidden:s.hidden||false};
       });
+      // SITE_ORDER도 시트에 없는 현장은 제거
       const savedOrder=loadSiteOrder();
       if(savedOrder){
         const validNames=new Set(Object.keys(SITE_INFO));
@@ -500,6 +533,7 @@ async function syncFromSheet(){
     setSync("ok");render();
   }catch(err){setSync("error");}
 }
+
 let pushTimer=null;
 function pushToSheet(){
   if(pushTimer)clearTimeout(pushTimer);
@@ -513,6 +547,7 @@ function pushToSheet(){
     }catch(err){setSync("error");}
   },800);
 }
+
 let todosPushTimer=null;
 function pushTodosToSheet(){
   if(todosPushTimer)clearTimeout(todosPushTimer);
@@ -521,9 +556,10 @@ function pushTodosToSheet(){
       await fetch(SHEET_API,{method:"POST",
         headers:{"Content-Type":"text/plain;charset=utf-8"},
         body:JSON.stringify({sheet:"할일",action:"replaceAll",rows:TODOS.map(todoToRow)})});
-    }catch(err){}
+    }catch(err){/* 로컬 저장됨, 무시 */}
   },800);
 }
+
 let sitesPushTimer=null;
 function pushSitesToSheet(){
   if(sitesPushTimer)clearTimeout(sitesPushTimer);
@@ -533,7 +569,7 @@ function pushSitesToSheet(){
       await fetch(SHEET_API,{method:"POST",
         headers:{"Content-Type":"text/plain;charset=utf-8"},
         body:JSON.stringify({sheet:"현장",action:"replaceAll",rows})});
-    }catch(err){}
+    }catch(err){/* 무시 */}
   },800);
 }
 function saveNote(el){
@@ -546,7 +582,8 @@ function fmt(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"
 function todayStr(){return fmt(new Date());}
 function byTime(a,b){const ta=a.time||"99:99",tb=b.time||"99:99";return ta<tb?-1:ta>tb?1:0;}
 function evOf(ds){return DATA.filter(e=>e.date===ds).sort(byTime);}
-function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());s.setHours(0,0,0,0);return s;}
+function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());s.setHours(0,0,0,0);return s;} // 일요일 시작
+
 const V=document.getElementById("view");
 function render(){
   if(view==="board")renderBoard();
@@ -561,8 +598,9 @@ function render(){
     view==="todo"?"체크하면 완료 · 날짜 잡기를 누르면 일정(달력)으로 올라갑니다":
     "날짜를 누르면 일정 추가 · 일정을 누르면 수정";
 }
+
 /* ===== 2주 보드 ===== */
-function wkKey(d){return fmt(weekStart(d));}
+function wkKey(d){return fmt(weekStart(d));} // 그 주 일요일 날짜 = 주 식별자
 function weekMemos(monKey){return DATA.filter(e=>!e.date&&e.week===monKey);}
 function renderBoard(){
   const base=weekStart(cur);
@@ -594,6 +632,7 @@ function renderBoard(){
       html+=`<div class="bcell ${isT?'today':''} ${wknd?'weekend':''}" data-date="${ds}">${inner}</div>`;
     }
     html+=`</div>`;
+    // 주간 메모 (날짜 미정)
     const wm=weekMemos(monKey);
     html+=`<div class="wmemo"><div class="wmemo-h">📌 ${w===0?"이번 주":"다음 주"} 메모 · 날짜 미정 할 일</div>`;
     if(wm.length){
@@ -615,6 +654,8 @@ function renderBoard(){
   html+=attentionHTML();
   V.innerHTML=html;
 }
+
+/* ===== 확인 필요한 일정 (접힌 바, 맨 아래) ===== */
 function overdue(){
   const t=todayStr();
   return DATA.filter(e=>e.date&&e.status!=="완료"&&e.date<t).sort((a,b)=>a.date<b.date?-1:1);
@@ -633,6 +674,8 @@ function attentionHTML(){
     <div class="attn-toggle" id="attnToggle">확인 필요한 일정 ${od.length}건 <span style="margin-left:auto">▾</span></div>
     <div class="attn-list" id="attnList">${rows}</div></div>`;
 }
+
+/* ===== 오늘 상세 (카드형) ===== */
 function renderToday(){
   const d=new Date(),ds=todayStr();
   const evs=evOf(ds);
@@ -640,6 +683,7 @@ function renderToday(){
     <button class="addbar" id="addTop">+ 일정 추가</button></div>`;
   if(!evs.length)html+=`<div class="empty">오늘 일정이 없습니다</div>`;
   evs.forEach(e=>html+=todayCard(e));
+  // 내일
   const t=new Date(d);t.setDate(d.getDate()+1);const tds=fmt(t);
   const tev=evOf(tds);
   if(tev.length){
@@ -662,7 +706,8 @@ function todayCard(e){
     <button class="tcheck ${done?'is-done':''}" data-done="${e.id}">${done?"✓ 완료":"완료"}</button>
   </div>`;
 }
-/* ===== 월간 ===== */
+
+/* ===== 월간 (전체 표시) ===== */
 function renderMonth(){
   const y=cur.getFullYear(),m=cur.getMonth();
   const first=new Date(y,m,1),start=new Date(first);
@@ -676,8 +721,9 @@ function renderMonth(){
     let inner=`<div class="${cls}">${d.getDate()}</div>`;
     const MAX=3;
     evs.slice(0,MAX).forEach(e=>{
+      const t=e.time?e.time.slice(0,5)+" ":"";
       const dn=e.status==="완료"?"done":"";
-      inner+=`<div class="ev ${e.kind} ${dn}" data-id="${e.id}">${e.site||e.desc||""}</div>`;
+      inner+=`<div class="ev ${e.kind} ${dn}" data-id="${e.id}">${t}${e.site}</div>`;
     });
     if(evs.length>MAX)inner+=`<div class="ev-more" data-date="${ds}">+${evs.length-MAX}개</div>`;
     cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-date="${ds}">${inner}</div>`;
@@ -687,6 +733,7 @@ function renderMonth(){
     <button class="btn" data-go="prev">‹</button><button class="btn" data-go="next">›</button></div></div>
     <div class="cal" id="monthCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
     <div class="grid">${cells}</div></div>`;
+  // 터치 스와이프로 월 이동
   const cal=document.getElementById("monthCal");
   let _tx=0,_ty=0;
   cal.addEventListener("touchstart",e=>{_tx=e.touches[0].clientX;_ty=e.touches[0].clientY;},{passive:true});
@@ -698,6 +745,7 @@ function renderMonth(){
     }
   });
 }
+
 /* ===== 현장별 ===== */
 const STAGES=["상담","견적","계약","시공","완료"];
 function kindToStage(k){return k==="견적"?1:k==="실측"?2:k==="공사"?3:0;}
@@ -740,15 +788,18 @@ function moveSite(name,dir){
   saveSiteOrder(order);
   renderCust();
 }
-function normSite(n){return n.replace(/\s+/g,"");}
+function normSite(n){return n.replace(/\s+/g,"");}  // 공백 제거로 동일 현장 판별
 function renderCust(){
+  // 공백 무시 기준으로 현장 병합 (norm → canonical name, events[])
   const normToCanon={};
   const normToEvs={};
+  // SITE_INFO 이름을 canonical로 우선 등록
   Object.keys(SITE_INFO).forEach(name=>{
     const norm=normSite(name);
     normToCanon[norm]=name;
     normToEvs[norm]=normToEvs[norm]||[];
   });
+  // 일정에서 현장명 수집 (SITE_INFO에 없으면 첫 등장 이름을 canonical로)
   DATA.forEach(e=>{
     if(!e.date)return;
     const name=e.site||"기타";
@@ -773,7 +824,7 @@ function renderCust(){
     const evs=(normToEvs[norm]||[]).sort((a,b)=>a.date<b.date?-1:1);
     const info=SITE_INFO[name]||findInfo(name);
     const meta=info?.customer||"";
-    const recent=evs.length?evs[evs.length-1].date.slice(5)+" "+(evs[evs.length-1].desc||evs[evs.length-1].kind):"일정 없음";
+    const recent=evs.length?(()=>{const le=evs[evs.length-1];const dw=DOW[new Date(le.date+"T00:00").getDay()];return le.date.slice(5)+"("+dw+") "+(le.desc||le.kind);})():"일정 없음";
     const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
     const ss=name.replace(/"/g,"&quot;");
     const first=idx===0,last=idx===filtered.length-1;
@@ -795,7 +846,8 @@ function renderCust(){
     if(evs.length){
       html+=`<div class="cust-ev-label">관련 일정</div>`;
       evs.forEach(e=>{const t=e.time||"종일";
-        html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)} ${t}</span>
+        const dw=DOW[new Date(e.date+"T00:00").getDay()];
+        html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)}(${dw}) ${t}</span>
           <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span>${e.memo?`<span style="color:var(--ink3);font-size:12px;margin-left:4px">· ${e.memo}</span>`:""}</span></div>`;});
     }
     html+=`</div></div>`;
@@ -815,6 +867,7 @@ function renderCust(){
   }
 }
 function cssid(s){return s.replace(/[^a-zA-Z0-9가-힣]/g,"_");}
+
 /* ===== 할 일 ===== */
 const KIND_KEYWORDS=[["실측",["실측","측정"]],["견적",["견적","견적서"]],["공사",["공사","시공","보수","철거","제작"]],["미팅",["미팅","상담","방문","연락","전달"]]];
 function guessKind(text){
@@ -822,6 +875,7 @@ function guessKind(text){
   return "기타";
 }
 function guessSite(text){
+  // 줄 첫 토큰을 현장명 후보로. 흔한 동사/접미어 제거
   let t=text.replace(/\[.*?\]/g,"").trim();
   const first=t.split(/[\s/]/)[0]||"";
   return first.length>=2?first:"";
@@ -849,6 +903,7 @@ function renderTodo(){
     html+=`<div class="paste-btns"><button class="btn go" id="pasteAdd">이대로 ${pastePreview.items.length}개 추가</button></div></div>`;
   }
   html+=`</div></div>`;
+
   html+=`<div class="todo-sec">할 일 · ${active.length}개</div>`;
   if(!active.length)html+=`<div class="empty" style="padding:18px 0">할 일이 없습니다</div>`;
   active.forEach(t=>html+=todoItemHTML(t));
@@ -883,9 +938,11 @@ function parseNote(raw){
   const items=[];let last=null;
   lines.forEach(line=>{
     let s=line.trim();
-    if(!s||/^[ㅡ\-=_]{3,}$/.test(s))return;
+    if(!s||/^[ㅡ\-=_]{3,}$/.test(s))return; // 구분선/빈줄
+    // 체크박스 표기 제거
     s=s.replace(/^\[\s*[xX✓]?\s*\]\s*/,"").replace(/^[☐☑✓•]\s*/,"").trim();
     if(!s)return;
+    // 하위 항목
     if(/^[>›\-]/.test(s)){
       const sub=s.replace(/^[>›\-]\s*/,"").trim();
       if(last&&sub)last.sub.push(sub);
@@ -896,12 +953,15 @@ function parseNote(raw){
   });
   return {raw,items};
 }
+
 /* ===== events ===== */
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   t.classList.add("on");view=t.dataset.v;if(view!=="cust")custQuery="";
   if(view!=="todo"){pasteOpen=false;pastePreview=null;}render();});
+
 V.addEventListener("click",e=>{
+  // ----- 할 일 -----
   const tdel=e.target.closest("[data-tdel]");
   if(tdel){if(!confirm("할 일을 삭제할까요?"))return;TODOS=TODOS.filter(x=>x.id!==Number(tdel.dataset.tdel));saveTodos();render();return;}
   const tcheck=e.target.closest("[data-todocheck]");
@@ -934,6 +994,7 @@ V.addEventListener("click",e=>{
     saveTodos();pastePreview=null;pasteOpen=false;localStorage.removeItem("smh_paste_draft");render();return;}
   const titem=e.target.closest("[data-todoid]");
   if(titem){openTodoDetail(Number(titem.dataset.todoid));return;}
+
   const done=e.target.closest("[data-done]");
   if(done){const id=Number(done.dataset.done);const ev=DATA.find(x=>x.id===id);
     ev.status=ev.status==="완료"?"예정":"완료";save();render();return;}
@@ -988,6 +1049,8 @@ V.addEventListener("click",e=>{
   const body=e.target.closest("[data-id]");
   if(body){openDetail(Number(body.dataset.id));return;}
 });
+
+/* detail view */
 const dov=document.getElementById("dov");
 const dayov=document.getElementById("dayov");
 let detailId=null;
@@ -1084,6 +1147,7 @@ function openDetail(id){
   g("dvStatus").textContent=done?"완료":"예정";
   g("dvStatus").className="dv-v"+(done?" done":"");
   g("dvDone").textContent=done?"완료 취소":"완료 처리";
+  // 주간 메모(날짜 미정)일 때만 날짜 잡기/할일로 보내기 버튼 표시
   const isWeekMemo=!ev.date&&!!ev.week;
   g("dvWeekActs").style.display=isWeekMemo?"flex":"none";
   g("dvStatusRow").style.display=isWeekMemo?"none":"flex";
@@ -1111,11 +1175,15 @@ document.getElementById("dvToTodo").onclick=()=>{
   closeDetail();render();
   alert("할일 탭으로 이동했습니다");
 };
+
+/* modal */
 const ov=document.getElementById("ov");
+// 현장명 자동완성
 function getSiteNames(){
   const s=new Set();
   Object.keys(SITE_INFO).forEach(n=>s.add(n));
   DATA.forEach(e=>{if(e.site)s.add(e.site);});
+  // normSite 기준 중복 제거 (공백 차이 통합)
   const normMap={};
   [...s].forEach(n=>{const norm=normSite(n);if(!normMap[norm])normMap[norm]=n;});
   return Object.values(normMap).sort();
@@ -1140,6 +1208,7 @@ function initSiteAc(){
   inp.addEventListener("focus",showAc);
   inp.addEventListener("blur",()=>setTimeout(()=>list.classList.remove("open"),150));
 }
+
 let curKind="미팅";
 document.getElementById("kindChips").addEventListener("click",e=>{
   const c=e.target.closest(".chip");if(!c)return;
@@ -1195,6 +1264,7 @@ document.getElementById("delBtn").onclick=()=>{
   if(!confirm("이 일정을 삭제할까요?"))return;
   DATA=DATA.filter(x=>x.id!==editId);save();closeModal();render();
 };
+
 render();
 syncFromSheet();
 </script>
