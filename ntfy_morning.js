@@ -262,7 +262,11 @@ async function main() {
       const contentLines = splitTextLines(r["내용"]);
       const memoLines = splitTextLines(r["메모"]);
 
-      lines.push(timeLabel + site);
+     if (time) {
+  lines.push("[" + time + "] " + site);
+} else {
+  lines.push("[종일] " + site);
+}
 
       contentLines.forEach(function (line) {
         lines.push("• " + line);
