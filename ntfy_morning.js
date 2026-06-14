@@ -242,41 +242,34 @@ async function main() {
   const lines = [];
 
   if (todayEvents.length) {
+    lines.push("────────");
+
     todayEvents.forEach(function (r, index) {
       const time = normalizeTime(r["시간"]);
       const timeLabel = time ? time + " " : "종일 ";
       const site = String(r["현장명"] || "").trim();
 
-      const category = String(r["구분"] || "").trim();
       const content = String(r["내용"] || "").trim();
       const memoText = String(r["메모"] || "").trim();
 
-      let detailLine = "";
-      if (category && content) {
-        detailLine = category + " - " + content;
-      } else if (category) {
-        detailLine = category;
-      } else if (content) {
-        detailLine = content;
-      }
+      lines.push("✓ " + timeLabel + site);
 
-      lines.push(timeLabel + site);
-
-      if (detailLine) {
-        lines.push("  " + detailLine);
+      if (content) {
+        lines.push("  " + content);
       }
 
       if (memoText) {
-        lines.push("  ✓ " + memoText);
+        lines.push("  > " + memoText);
       }
 
       if (index < todayEvents.length - 1) {
-        lines.push("");
+        lines.push("────────");
       }
     });
   } else {
     lines.push("오늘 일정 없음");
   }
+
 
   if (overdueEvents.length) {
     lines.push("");
