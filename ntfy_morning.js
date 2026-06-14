@@ -252,15 +252,15 @@ async function main() {
       const content = String(r["내용"] || "").trim();
       const memoText = String(r["메모"] || "").trim();
 
-      lines.push("✓ " + timeLabel + site);
+     lines.push(timeLabel + site);
 
-      if (content) {
-        lines.push("  " + content);
-      }
+  if (content) {
+  lines.push("· " + content);
+}
 
-      if (memoText) {
-        lines.push("  > " + memoText);
-      }
+if (memoText) {
+  lines.push("  " + memoText);
+}
 
       if (index < todayEvents.length - 1) {
         lines.push("────────");
