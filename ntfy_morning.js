@@ -56,12 +56,9 @@ function normalizeTime(value) {
 
   const s = String(value).trim();
 
-  // 이미 "01:35" 같은 문자열이면 그대로 사용
   const m = s.match(/^(\d{1,2}):(\d{2})/);
   if (m) return pad(m[1]) + ":" + pad(m[2]);
 
-  // Google Sheets 시간 셀은 1899-12-30 계열 Date로 넘어올 수 있음.
-  // 단순 +9시간을 하면 틀어질 수 있어서 Asia/Seoul 기준으로 직접 포맷.
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) {
     const parts = new Intl.DateTimeFormat("en-GB", {
@@ -240,20 +237,42 @@ async function main() {
   const shortDateLabel =
     now.getMonth() + 1 + "/" + now.getDate() + "(" + dayNames[now.getDay()] + ")";
 
-  const title = shortDateLabel + " 일정 · 오늘 " + todayEvents.length + "건";
+  const title = "• " + shortDateLabel + " 일정 · 오늘 " + todayEvents.length + "건";
 
   const lines = [];
 
   if (todayEvents.length) {
-    todayEvents.forEach(function (r) {
+    todayEvents.forEach(function (r, index) {
       const time = normalizeTime(r["시간"]);
       const timeLabel = time ? time + " " : "종일 ";
       const site = String(r["현장명"] || "").trim();
-      const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-      const kind = r["구분"] ? " [" + String(r["구분"]).trim() + "]" : "";
-      const memo = r["메모"] ? " / " + String(r["메모"]).trim() : "";
 
-      lines.push(timeLabel + site + desc + kind + memo);
+      const category = String(r["구분"] || "").trim();
+      const content = String(r["내용"] || "").trim();
+      const memoText = String(r["메모"] || "").trim();
+
+      let detailLine = "";
+      if (category && content) {
+        detailLine = category + " - " + content;
+      } else if (category) {
+        detailLine = category;
+      } else if (content) {
+        detailLine = content;
+      }
+
+      lines.push(timeLabel + site);
+
+      if (detailLine) {
+        lines.push("  " + detailLine);
+      }
+
+      if (memoText) {
+        lines.push("  ✓ " + memoText);
+      }
+
+      if (index < todayEvents.length - 1) {
+        lines.push("");
+      }
     });
   } else {
     lines.push("오늘 일정 없음");
@@ -262,15 +281,26 @@ async function main() {
   if (overdueEvents.length) {
     lines.push("");
     lines.push("⚠️ 미완료 지난 일정 " + overdueEvents.length + "건");
+    lines.push("");
 
-    overdueEvents.slice(0, 5).forEach(function (r) {
+    overdueEvents.slice(0, 5).forEach(function (r, index) {
       const date = normalizeDate(r["날짜"]).slice(5).replace("-", "/");
       const site = String(r["현장명"] || "").trim();
-      const desc = r["내용"] ? " · " + String(r["내용"]).trim() : "";
-      lines.push(date + " " + site + desc);
+      const content = String(r["내용"] || "").trim();
+
+      lines.push(date + " " + site);
+
+      if (content) {
+        lines.push("  " + content);
+      }
+
+      if (index < Math.min(overdueEvents.length, 5) - 1) {
+        lines.push("");
+      }
     });
 
     if (overdueEvents.length > 5) {
+      lines.push("");
       lines.push("... 외 " + (overdueEvents.length - 5) + "건");
     }
   }
