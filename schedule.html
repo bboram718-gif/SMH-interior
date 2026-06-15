@@ -46,7 +46,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 
 /* 2-week board */
 .board-area{margin-top:8px}
-.board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.board-wrap::-webkit-scrollbar{display:none}
 .weekband{margin-bottom:6px;font-size:12px;color:var(--ink3);font-weight:600;padding-left:2px}
 .board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:660px;margin-bottom:0}
 .bcell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 7px 8px;
