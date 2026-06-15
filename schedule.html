@@ -70,15 +70,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .scrollhint{display:none;font-size:11.5px;color:var(--ink3);text-align:center;margin:-4px 0 8px}
 
 /* weekly memo */
-.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:-6px 0 18px}
+.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:-6px 0 18px;min-width:660px}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
-.wmemo-item{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:13.5px}
+.wmemo-item{display:flex;align-items:center;gap:7px;padding:9px 0;font-size:13.5px;border-top:1px solid #eee6d6}
+.wmemo-item:first-of-type{border-top:none}
 .wmemo-item .wdot{color:var(--gold);flex-shrink:0}
-.wmemo-item .wmemo-text{flex:1;min-width:0;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .wmemo-item .wtag{flex-shrink:0}
-.wmemo-btn{background:none;border:1px solid var(--line2);border-radius:6px;padding:2px 5px;
-  font-size:13px;cursor:pointer;flex-shrink:0;line-height:1.4}
-.wmemo-btn:active{background:var(--gold-bg)}
+.wmemo-item .wmemo-text{flex:1;min-width:0;white-space:nowrap}
+.wmemo-btn{background:none;border:1px solid var(--line2);border-radius:7px;padding:0;
+  width:30px;height:30px;cursor:pointer;flex-shrink:0;color:var(--ink2);
+  display:inline-flex;align-items:center;justify-content:center}
+.wmemo-btn svg{width:16px;height:16px}
+.wmemo-btn:active{background:var(--gold-bg);color:var(--gold);border-color:var(--gold)}
 .wmemo-add{font-size:12.5px;color:var(--gold);cursor:pointer;font-weight:500;padding:5px 0 0;display:inline-flex;gap:4px;align-items:center}
 .wmemo-add:hover{text-decoration:underline}
 .wmemo-empty{font-size:12.5px;color:var(--ink3);padding:2px 0}
@@ -638,11 +641,11 @@ function renderBoard(){
     if(wm.length){
       wm.forEach(e=>{
         const dn=e.status==="완료"?"done":"";
-        html+=`<div class="wmemo-item ${dn}"><span class="wdot">·</span>
-          <span class="wmemo-text">${e.site}${e.desc?" · "+e.desc:""}</span>
+        html+=`<div class="wmemo-item ${dn}">
+          <button class="wmemo-btn" data-wdate="${e.id}" title="날짜 잡기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>
+          <button class="wmemo-btn" data-wtodo="${e.id}" title="할일로 보내기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></button>
           <span class="tag ${e.kind} wtag">${e.kind}</span>
-          <button class="wmemo-btn" data-wdate="${e.id}" title="날짜 잡기">📅</button>
-          <button class="wmemo-btn" data-wtodo="${e.id}" title="할일로 보내기">☑️</button>
+          <span class="wmemo-text">${e.site}${e.desc?" · "+e.desc:""}</span>
         </div>`;
       });
     }else{
