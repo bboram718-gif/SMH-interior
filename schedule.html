@@ -71,13 +71,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .scrollhint{display:none;font-size:11.5px;color:var(--ink3);text-align:center;margin:-4px 0 8px}
 
 /* weekly memo */
-.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:8px 0 18px}
+.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:8px 0 18px;overflow:hidden}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.wmemo-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wmemo-scroll::-webkit-scrollbar{display:none}
+.wmemo-list{display:inline-block;min-width:100%}
 .wmemo-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;border-top:1px solid #eee6d6}
 .wmemo-item:first-of-type{border-top:none}
 .wmemo-item .wdot{color:var(--gold);flex-shrink:0}
 .wmemo-item .wtag{flex-shrink:0}
 .wmemo-item .wmemo-text{flex:1;min-width:0;white-space:nowrap}
+.wmemo-list .wmemo-item{width:max-content;min-width:100%}
 .wmemo-btn{background:none;border:1px solid var(--line2);border-radius:5px;padding:0;
   width:20px;height:20px;cursor:pointer;flex-shrink:0;color:var(--ink2);position:relative;
   display:inline-flex;align-items:center;justify-content:center}
@@ -641,6 +645,7 @@ function renderBoard(){
     const wm=weekMemos(monKey);
     html+=`<div class="wmemo"><div class="wmemo-h">📌 ${w===0?"이번 주":"다음 주"} 메모 · 날짜 미정 할 일</div>`;
     if(wm.length){
+      html+=`<div class="wmemo-scroll"><div class="wmemo-list">`;
       wm.forEach(e=>{
         const dn=e.status==="완료"?"done":"";
         html+=`<div class="wmemo-item ${dn}">
@@ -650,6 +655,7 @@ function renderBoard(){
           <span class="wmemo-text">${e.site}${e.desc?" · "+e.desc:""}</span>
         </div>`;
       });
+      html+=`</div></div>`;
     }else{
       html+=`<div class="wmemo-empty">아직 없음</div>`;
     }
