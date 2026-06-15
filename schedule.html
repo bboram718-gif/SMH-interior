@@ -724,9 +724,8 @@ function renderMonth(){
     let inner=`<div class="${cls}">${d.getDate()}</div>`;
     const MAX=3;
     evs.slice(0,MAX).forEach(e=>{
-      const t=e.time?e.time.slice(0,5)+" ":"";
       const dn=e.status==="완료"?"done":"";
-      inner+=`<div class="ev ${e.kind} ${dn}" data-id="${e.id}">${t}${e.site}</div>`;
+      inner+=`<div class="ev ${e.kind} ${dn}" data-id="${e.id}">${e.site}</div>`;
     });
     if(evs.length>MAX)inner+=`<div class="ev-more" data-date="${ds}">+${evs.length-MAX}개</div>`;
     cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-date="${ds}">${inner}</div>`;
