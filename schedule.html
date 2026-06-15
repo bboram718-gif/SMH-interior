@@ -45,9 +45,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .addbar:active{transform:scale(.98)}
 
 /* 2-week board */
-.board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
+.board-area{margin-top:8px}
+.board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .weekband{margin-bottom:6px;font-size:12px;color:var(--ink3);font-weight:600;padding-left:2px}
-.board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:660px;margin-bottom:14px}
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:660px;margin-bottom:0}
 .bcell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 7px 8px;
   min-height:104px;cursor:pointer;transition:.1s;display:flex;flex-direction:column}
 .bcell:hover{border-color:var(--line2);background:#fcfbf8}
@@ -70,7 +71,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .scrollhint{display:none;font-size:11.5px;color:var(--ink3);text-align:center;margin:-4px 0 8px}
 
 /* weekly memo */
-.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:-6px 0 18px;min-width:660px}
+.wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:8px 0 18px}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
 .wmemo-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;border-top:1px solid #eee6d6}
 .wmemo-item:first-of-type{border-top:none}
@@ -616,13 +617,13 @@ function renderBoard(){
       <button class="btn" data-go="next">다음 ›</button>
     </div></div>`;
   html+=`<div class="scrollhint">← 좌우로 넘겨서 보세요 →</div>`;
-  html+=`<div class="board-wrap">`;
+  html+=`<div class="board-area">`;
   for(let w=0;w<2;w++){
     const ws=new Date(base);ws.setDate(base.getDate()+w*7);
     const we=new Date(ws);we.setDate(ws.getDate()+6);
     const monKey=fmt(ws);
     html+=`<div class="weekband">${w===0?"이번 주":"다음 주"} · ${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}</div>`;
-    html+=`<div class="board">`;
+    html+=`<div class="board-wrap"${w===0?' data-thisweek="1"':''}><div class="board">`;
     for(let i=0;i<7;i++){
       const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=fmt(d);
       const evs=evOf(ds);const isT=ds===todayStr();const wknd=d.getDay()===0||d.getDay()===6;
@@ -635,8 +636,8 @@ function renderBoard(){
       if(evs.length>4)inner+=`<div class="bmore" data-day="${ds}">+${evs.length-4}개 더 보기</div>`;
       html+=`<div class="bcell ${isT?'today':''} ${wknd?'weekend':''}" data-date="${ds}">${inner}</div>`;
     }
-    html+=`</div>`;
-    // 주간 메모 (날짜 미정)
+    html+=`</div></div>`;
+    // 주간 메모 (날짜 미정) - 스크롤 영역 밖, 항상 고정 표시
     const wm=weekMemos(monKey);
     html+=`<div class="wmemo"><div class="wmemo-h">📌 ${w===0?"이번 주":"다음 주"} 메모 · 날짜 미정 할 일</div>`;
     if(wm.length){
@@ -657,6 +658,16 @@ function renderBoard(){
   html+=`</div>`;
   html+=attentionHTML();
   V.innerHTML=html;
+  // 오늘 요일이 화면 맨 앞에 오도록 이번 주 보드만 가로 스크롤
+  requestAnimationFrame(()=>{
+    const wrap=V.querySelector('.board-wrap[data-thisweek="1"]');
+    const todayCell=wrap&&wrap.querySelector(".bcell.today");
+    if(wrap&&todayCell){
+      const board=todayCell.closest(".board");
+      const left=todayCell.offsetLeft-board.offsetLeft-8;
+      wrap.scrollTo({left:Math.max(0,left),behavior:"auto"});
+    }
+  });
 }
 
 /* ===== 확인 필요한 일정 (접힌 바, 맨 아래) ===== */
