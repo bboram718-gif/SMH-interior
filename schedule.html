@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 /* weekly memo */
 .wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:8px 0 18px;overflow:hidden}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
-.wmemo-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wmemo-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x}
 .wmemo-scroll::-webkit-scrollbar{display:none}
 .wmemo-list{display:inline-block;min-width:100%}
 .wmemo-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;border-top:1px solid #eee6d6}
