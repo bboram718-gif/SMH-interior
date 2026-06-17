@@ -14,6 +14,9 @@
   --coral:#993c1d; --coral-bg:#faece7;
   --purple:#534ab7; --purple-bg:#eeedfe;
   --gray-bg:#f1efe8; --warn:#a35a00; --warn-bg:#fdf0db;
+  --shadow:0 1px 2px rgba(40,38,34,.04),0 2px 8px rgba(40,38,34,.04);
+  --shadow-card:0 1px 3px rgba(40,38,34,.05);
+  --radius:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -21,28 +24,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .wrap{max-width:1000px;margin:0 auto;padding:0 14px}
 
 /* header */
-.top{position:sticky;top:0;z-index:30;background:var(--bg);padding:14px 0 8px;border-bottom:1px solid var(--line)}
-.top h1{font-size:17px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:7px}
-.logo{width:24px;height:24px;border-radius:6px;background:var(--black);color:var(--gold);
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-.sub{font-size:12px;color:var(--ink3);margin-top:2px}
-.tabs{display:flex;gap:4px;margin-top:10px}
-.tab{flex:1;text-align:center;padding:9px 4px;font-size:14px;font-weight:500;color:var(--ink2);
-  background:transparent;border:none;border-radius:8px;cursor:pointer;transition:.15s}
-.tab.on{background:var(--black);color:#fff}
+.top{position:sticky;top:0;z-index:30;background:rgba(250,249,246,.92);backdrop-filter:saturate(1.4) blur(8px);
+  padding:16px 0 0;border-bottom:1px solid var(--line)}
+.top h1{font-size:17px;font-weight:700;letter-spacing:-.4px;display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--black);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;letter-spacing:.3px}
+.sub{font-size:12px;color:var(--ink3);margin-top:3px;letter-spacing:-.2px}
+.tabs{display:flex;gap:2px;margin-top:14px}
+.tab{flex:1;text-align:center;padding:11px 4px 12px;font-size:14.5px;font-weight:600;color:var(--ink3);
+  background:transparent;border:none;cursor:pointer;transition:.18s;position:relative;letter-spacing:-.3px}
+.tab::after{content:"";position:absolute;left:50%;right:50%;bottom:-1px;height:2.5px;
+  background:var(--gold);border-radius:2px;transition:.2s;opacity:0}
+.tab.on{color:var(--ink)}
+.tab.on::after{left:14%;right:14%;opacity:1}
+.tab:active{color:var(--ink2)}
 
 /* nav row */
-.nav{display:flex;align-items:center;justify-content:space-between;margin:14px 0 4px;flex-wrap:wrap;gap:8px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px;flex-wrap:wrap;gap:8px}
+.vtoggle+.nav{margin-top:2px}
 .nav .arrows{display:flex;gap:6px}
-.btn{border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:8px 13px;
-  font-size:14px;color:var(--ink);cursor:pointer;font-weight:500;transition:.15s}
-.btn:hover{background:var(--gray-bg)}
-.btn.today{border-color:var(--gold);color:var(--gold)}
-.range{font-size:16px;font-weight:600}
-.addbar{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:8px;
-  padding:8px 13px;font-size:14px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.addbar:hover{background:var(--gray-bg)}
-.addbar:active{transform:scale(.98)}
+.btn{border:1px solid var(--line2);background:var(--card);border-radius:9px;padding:8px 13px;
+  font-size:14px;color:var(--ink2);cursor:pointer;font-weight:600;transition:.15s;letter-spacing:-.2px}
+.btn:hover{background:var(--gray-bg);color:var(--ink)}
+.btn:active{transform:scale(.97)}
+.btn.today{border-color:var(--gold);color:var(--gold);background:var(--gold-bg)}
+.range{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.addbar{background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:9px;
+  padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;letter-spacing:-.2px}
+.addbar:hover{background:#000}
+.addbar:active{transform:scale(.97)}
 
 /* 2-week board */
 .board-area{margin-top:8px}
@@ -50,7 +60,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .board-wrap::-webkit-scrollbar{display:none}
 .weekband{margin-bottom:6px;font-size:12px;color:var(--ink3);font-weight:600;padding-left:2px}
 .board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:660px;margin-bottom:0}
-.bcell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 7px 8px;
+.bcell{background:var(--card);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-card);padding:7px 7px 8px;
   min-height:104px;cursor:pointer;transition:.1s;display:flex;flex-direction:column}
 .bcell:hover{border-color:var(--line2);background:#fcfbf8}
 .bcell.today{border-color:var(--gold);border-width:2px;background:var(--gold-bg)}
@@ -108,7 +118,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .attn-check:hover{background:#fff}
 
 /* month */
-.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px;touch-action:pan-y}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-card);overflow:hidden;margin-top:2px;touch-action:pan-y}
 .dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--line)}
 .dow div{text-align:center;font-size:11px;color:var(--ink3);padding:7px 0;font-weight:500}
 .dow .sun{color:#c0392b}.dow .sat{color:#2471a3}
@@ -133,7 +143,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .ev-more{font-size:9px;color:var(--ink3);padding:1px 3px;margin-top:1px}
 
 /* today cards */
-.tcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-card);padding:14px 16px;
   margin-bottom:10px;display:flex;gap:13px;transition:.1s}
 .tcard.done{opacity:.55}
 .tcard .ttime{font-size:17px;font-weight:700;color:var(--ink);min-width:58px;padding-top:2px}
@@ -162,10 +172,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .empty{text-align:center;color:var(--ink3);font-size:14px;padding:34px 0}
 
 /* customer */
-.search{width:100%;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;
-  font-size:15px;background:var(--card);margin:8px 0 14px;font-family:inherit;color:var(--ink)}
-.search:focus{outline:none;border-color:var(--gold)}
-.cust{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.search{width:100%;border:1px solid var(--line2);border-radius:11px;padding:12px 15px;
+  font-size:15px;background:var(--card);margin:4px 0 14px;font-family:inherit;color:var(--ink);box-shadow:var(--shadow-card);transition:.15s}
+.search:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg)}
+.search::placeholder{color:var(--ink3)}
+.cust{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-card);margin-bottom:9px;overflow:hidden}
 .cust-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px;user-select:none}
 .cust-header:active{background:var(--bg2)}
 .cust-info{min-width:0;flex:1}
@@ -194,10 +205,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .mini-ev .md{color:var(--ink3);min-width:96px}
 
 /* FAB */
-.fab{position:fixed;right:18px;bottom:22px;width:58px;height:58px;border-radius:50%;
-  background:var(--black);color:var(--gold);border:none;font-size:30px;cursor:pointer;z-index:40;
-  box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;line-height:1}
-.fab:active{transform:scale(.94)}
+.fab{position:fixed;right:18px;bottom:22px;width:56px;height:56px;border-radius:50%;
+  background:var(--ink);color:var(--gold);border:none;font-size:28px;cursor:pointer;z-index:40;
+  box-shadow:0 6px 20px rgba(40,38,34,.28);display:flex;align-items:center;justify-content:center;line-height:1;transition:.15s}
+.fab:hover{background:#000}
+.fab:active{transform:scale(.92)}
 
 /* modal */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
@@ -212,7 +224,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .field input,.field select,.field textarea{width:100%;border:1px solid var(--line2);border-radius:9px;
   padding:11px;font-size:15px;background:var(--card);font-family:inherit;color:var(--ink)}
 .field textarea{min-height:58px;resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg)}
 .two{display:flex;gap:10px}.two>*{flex:1}
 .chips{display:flex;gap:6px}
 .chip{flex:1;text-align:center;padding:10px 4px;border:1px solid var(--line2);border-radius:9px;
@@ -273,7 +285,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .pv-item .pv-sub{display:block;padding-left:14px;color:var(--ink3);font-size:12.5px}
 
 .todo-sec{font-size:12px;color:var(--ink3);font-weight:600;margin:16px 0 6px;padding-left:2px}
-.todo-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+.todo-item{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-card);padding:12px 13px;
   margin-bottom:7px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:.1s}
 .todo-item:hover{border-color:var(--line2)}
 .todo-check{width:21px;height:21px;border:2px solid var(--line2);border-radius:6px;flex-shrink:0;
@@ -309,36 +321,68 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .ev.wk-전기,.ev.wk-목공,.ev.wk-도장,.ev.wk-철거,.ev.wk-설비,.ev.wk-가구,.ev.wk-도배,.ev.wk-바닥,.ev.wk-기타{}
 
 /* 보기 토글 */
-.vtoggle{display:flex;gap:4px;background:var(--gray-bg);border-radius:9px;padding:3px}
-.vtoggle button{flex:1;border:none;background:transparent;padding:7px 8px;font-size:13px;
-  font-weight:600;color:var(--ink2);border-radius:7px;cursor:pointer;white-space:nowrap}
-.vtoggle button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.vtoggle{display:flex;gap:3px;background:var(--gray-bg);border-radius:10px;padding:3px;border:1px solid var(--line)}
+.vtoggle button{flex:1;border:none;background:transparent;padding:8px 8px;font-size:13.5px;
+  font-weight:600;color:var(--ink3);border-radius:8px;cursor:pointer;white-space:nowrap;transition:.15s;letter-spacing:-.2px}
+.vtoggle button:active{transform:scale(.98)}
+.vtoggle button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-card)}
 
-/* 월 합계 바 */
-.sum-bar{display:flex;gap:8px;margin:10px 0 12px}
-.sum-card{flex:1;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 12px;text-align:center}
-.sum-card .sl{font-size:11px;color:var(--ink3);font-weight:500;margin-bottom:3px}
-.sum-card .sv{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
-.sum-card.paid .sv{color:var(--teal)}
-.sum-card.unpaid .sv{color:var(--coral)}
-
-/* 작업자 리스트 */
-.wk-day{font-size:12.5px;font-weight:700;color:var(--ink2);margin:16px 0 6px;padding-left:2px;
-  display:flex;align-items:center;gap:7px}
-.wk-day .wk-day-sum{font-size:11.5px;color:var(--ink3);font-weight:500;margin-left:auto}
-.wk-row{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;
-  margin-bottom:7px;display:flex;gap:11px;align-items:center;cursor:pointer;transition:.1s}
-.wk-row:hover{border-color:var(--line2)}
-.wk-row.paid{opacity:.62}
-.wk-row .wk-main{flex:1;min-width:0}
-.wk-row .wk-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.wk-row .wk-meta{font-size:12.5px;color:var(--ink3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wk-row .wk-right{text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-.wk-row .wk-pay{font-size:15px;font-weight:700;color:var(--ink)}
+/* 작업자 지급 버튼 (펼침 카드에서 사용) */
 .wk-paybtn{border:1px solid var(--line2);background:transparent;color:var(--ink2);
   border-radius:7px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-weight:600;white-space:nowrap}
 .wk-paybtn.is-paid{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
-.wk-grouphint{font-size:11.5px;color:var(--ink3);text-align:center;margin:2px 0 0}
+
+/* 현장별 / 인부별 펼침 카드 */
+.wk-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-card);margin-bottom:9px;overflow:hidden}
+.wk-card-h{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;user-select:none}
+.wk-card-h:active{background:#fcfbf8}
+.wk-card-info{flex:1;min-width:0}
+.wk-card-name{font-size:15.5px;font-weight:600;color:var(--ink)}
+.wk-card-sub{font-size:12.5px;color:var(--ink3);margin-top:3px}
+.wk-unpaid-mark{color:var(--coral);font-weight:600}
+.wk-clear-mark{color:var(--teal);font-weight:600}
+.wk-card-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.wk-card-total{font-size:15px;font-weight:700;color:var(--ink)}
+.wk-total-label{font-size:11px;font-weight:500;color:var(--ink3)}
+.wk-card.open .cust-chevron{transform:rotate(180deg)}
+.wk-card-body{display:none;border-top:1px solid var(--line);padding:4px 0}
+.wk-card-body.open{display:block}
+.wk-sub{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-top:1px solid var(--line)}
+.wk-sub:first-child{border-top:none}
+.wk-sub:hover{background:#fcfbf8}
+.wk-sub.paid{opacity:.6}
+.wk-sub-main{flex:1;min-width:0}
+.wk-sub-top{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.wk-sub-meta{font-size:12px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-sub-right{text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.wk-sub-pay{font-size:14px;font-weight:700;color:var(--ink)}
+
+/* 작업자 리스트 카드 */
+.wk-list{margin-top:10px}
+.wk-date-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-card);
+  margin-bottom:10px;overflow:hidden}
+.wk-date-h{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:#fcfbf8;
+  border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--gold)}
+.wk-date-count{font-size:11.5px;font-weight:600;color:var(--ink3)}
+.wk-list-card{background:var(--card);border-top:1px solid var(--line);overflow:hidden;cursor:pointer;transition:.1s}
+.wk-list-card:first-of-type{border-top:none}
+.wk-list-card:hover{background:#fcfbf8}
+.wk-list-head{display:flex;align-items:center;gap:9px;padding:11px 13px}
+.wk-list-time{width:44px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink2);line-height:1.35}
+.wk-list-main{flex:1;min-width:0}
+.wk-list-line{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden}
+.wk-list-worker{font-size:14.5px;font-weight:700;color:var(--ink);flex-shrink:0;max-width:35%;overflow:hidden;text-overflow:ellipsis}
+.wk-list-site-inline{font-size:13px;color:var(--ink3);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wk-list-more{width:16px;flex-shrink:0;text-align:right;color:var(--ink3);font-size:14px;line-height:1}
+.wk-list-card.open .wk-list-more{color:var(--gold);transform:rotate(180deg)}
+.wk-list-memo{display:none;border-top:1px solid var(--line);background:#fcfbf8;padding:10px 13px 12px}
+.wk-list-card.open .wk-list-memo{display:block}
+.wk-list-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.wk-list-item{font-size:13px;color:var(--ink2);line-height:1.55;padding:1px 0 1px 10px;position:relative}
+.wk-list-item:before{content:"·";position:absolute;left:0;color:var(--gold)}
+.wk-list-memo-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.wk-list-edit{border:1px solid var(--line2);background:var(--card);color:var(--ink2);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.wk-list-edit:active{background:var(--gold-bg);color:var(--gold);border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -347,10 +391,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <h1><span class="logo">SMH</span> 일정 관리</h1>
     <div class="sub">신명후 대표님 일정 <span id="syncBadge" style="color:var(--gold);font-size:11px"></span></div>
     <div class="tabs">
-      <button class="tab on" data-v="board">2주</button>
-      <button class="tab" data-v="today">오늘</button>
+      <button class="tab on" data-v="schedule">일정</button>
       <button class="tab" data-v="todo">할일</button>
-      <button class="tab" data-v="month">월간</button>
       <button class="tab" data-v="cust">현장</button>
       <button class="tab" data-v="worker">작업자</button>
     </div>
@@ -477,8 +519,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
         <div class="site-ac-list" id="workerAcList"></div>
       </div>
     </div>
-    <div class="field"><label>현장</label><input type="text" id="wSite" placeholder="예: 필복싱, 롯데캐슬"></div>
-    <div class="field"><label>일당 (원)</label><input type="text" id="wPay" inputmode="numeric" placeholder="예: 250000"></div>
+    <div class="field"><label>현장</label>
+      <div class="site-ac-wrap">
+        <input type="text" id="wSite" placeholder="예: 필복싱, 롯데캐슬" autocomplete="off">
+        <div class="site-ac-list" id="wSiteAcList"></div>
+      </div>
+    </div>
+    <div class="field"><label>일당 (선택)</label><input type="text" id="wPay" inputmode="numeric" placeholder="정해졌으면 입력 · 예: 250000"></div>
     <div class="field"><label>메모 (선택)</label><textarea id="wMemo" placeholder="작업 내용, 참고사항 등"></textarea></div>
     <div class="field" style="margin-bottom:4px">
       <label>지급 여부</label>
@@ -494,10 +541,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     </div>
   </div>
 </div>
+<div class="ov" id="wmov">
+  <div class="sheet">
+    <h2 id="wmemoTitle">작업 메모 수정</h2>
+    <div class="field"><label>메모</label><textarea id="wmemoText" placeholder="작업 준비사항, 체크할 내용만 적어주세요"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="wmemoCancel">취소</button>
+      <button class="btn save" id="wmemoSave">저장</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const DOW=["일","월","화","수","목","금","토"];
 const STORE="smh_schedule_v2";
+
+/* ===== 공통: HTML 이스케이프 (XSS/렌더 깨짐 방지) ===== */
+function esc(s){
+  if(s===undefined||s===null)return"";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+/* ===== 공통: 고유 ID 생성 (Date.now() 충돌 방지) ===== */
+let _idSeq=0;
+function uid(){return Date.now()*1000+(_idSeq=(_idSeq+1)%1000);}
 
 const SEED=[
   {id:1,date:"2026-06-12",time:"10:30",site:"필복싱",desc:"방문",kind:"미팅",status:"예정",memo:""},
@@ -550,15 +616,17 @@ const WORKER_KINDS=["전기","목공","도장","철거","설비","가구","도�
 const WORKER_STORE="smh_workers_v1";
 const WORKER_SEED=[
   {id:201,date:todayStr_init(),time:"",worker:"김반장",site:"필복싱",kind:"전기",pay:250000,paid:"미지급",memo:"조명 배선"},
+  {id:202,date:"2026-06-27",time:"07:00",worker:"황반장님",site:"공사 시작",kind:"목공",pay:0,paid:"미지급",memo:"공사 시작\n목공 자재 준비\n데코타일 선 발주\n조명자재 준비\n공간 확보\n현장 정리 체크 연락"},
 ];
 function todayStr_init(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 
 let DATA=load();
 let TODOS=loadTodos();
 let WORKERS=loadWorkers();
-let view="board";
+let view="schedule";
+let scheduleView="board"; // "today" | "board" | "month" — 일정 탭 내부 기간 토글
 let cur=new Date();
-let workerView="cal"; // "cal" | "list" | "pay"
+let workerView="cal"; // "list" | "cal" | "site"
 let editId=null;
 let custQuery="";
 
@@ -593,7 +661,7 @@ function normTime(v){
 }
 // 시트행(한글키) → 앱객체(영문키)
 function rowToEvent(r){
-  return {id:Number(r["일정ID"])||Date.now()+Math.random(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+  return {id:Number(r["일정ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     site:String(r["현장명"]||""),desc:String(r["내용"]||""),kind:String(r["구분"]||"기타"),
     status:String(r["상태"]||"예정"),memo:String(r["메모"]||""),week:normDate(r["주간"])||null};
 }
@@ -611,7 +679,7 @@ function siteToRow(name,info){
 function rowToTodo(r){
   const subRaw=String(r["하위메모"]||"");
   const sub=subRaw?subRaw.split("|").filter(Boolean):[];
-  return {id:Number(r["할일ID"])||Date.now()+Math.random(),
+  return {id:Number(r["할일ID"])||uid(),
     text:String(r["내용"]||""),site:String(r["현장"]||""),sub:sub,
     desc:String(r["상세"]||""),memo:String(r["메모"]||""),
     kind:String(r["구분"]||"기타"),done:String(r["완료"]||"").toLowerCase()==="true",
@@ -627,7 +695,7 @@ function rowToWorker(r){
   let pay=r["일당"];
   if(typeof pay==="string")pay=Number(pay.replace(/[^\d.-]/g,""))||0;
   else pay=Number(pay)||0;
-  return {id:Number(r["작업ID"])||Date.now()+Math.random(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+  return {id:Number(r["작업ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     worker:String(r["작업자"]||""),site:String(r["현장"]||""),kind:String(r["구분"]||"기타"),
     pay:pay,paid:String(r["지급여부"]||"미지급"),memo:String(r["메모"]||"")};
 }
@@ -700,6 +768,7 @@ function pushWorkersToSheet(){
     }catch(err){/* 로컬 저장됨, 무시 */}
   },800);
 }
+let sitesPushTimer=null;
 function pushSitesToSheet(){
   if(sitesPushTimer)clearTimeout(sitesPushTimer);
   sitesPushTimer=setTimeout(async()=>{
@@ -724,19 +793,28 @@ function evOf(ds){return DATA.filter(e=>e.date===ds).sort(byTime);}
 function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());s.setHours(0,0,0,0);return s;} // 일요일 시작
 
 const V=document.getElementById("view");
+// 일정 탭 기간 토글 (오늘/2주/월간)
+function scheduleToggleHTML(){
+  return `<div class="vtoggle" style="margin:4px 0 12px">
+    <button data-sview="today" class="${scheduleView==='today'?'on':''}">오늘</button>
+    <button data-sview="board" class="${scheduleView==='board'?'on':''}">2주</button>
+    <button data-sview="month" class="${scheduleView==='month'?'on':''}">월간</button></div>`;
+}
 function render(){
-  if(view==="board")renderBoard();
-  else if(view==="today")renderToday();
+  if(view==="schedule"){
+    if(scheduleView==="today")renderToday();
+    else if(scheduleView==="month")renderMonth();
+    else renderBoard();
+  }
   else if(view==="todo")renderTodo();
-  else if(view==="month")renderMonth();
   else if(view==="worker")renderWorker();
   else renderCust();
   document.getElementById("bottomhint").textContent =
     view==="cust"?"검색하거나, 상세 일정 보기를 눌러 관련 일정을 펼칠 수 있어요":
-    view==="board"?"날짜 칸을 누르면 그날 일정 추가 · 일정을 누르면 수정":
-    view==="today"?"체크 버튼으로 바로 완료 처리할 수 있어요":
     view==="todo"?"체크하면 완료 · 날짜 잡기를 누르면 일정(달력)으로 올라갑니다":
-    view==="worker"?"날짜를 누르면 작업 추가 · 일정과 별개로 관리됩니다":
+    view==="worker"?"리스트는 작업 메모 확인용 · 달력은 날짜 추가 · 현장별은 정산 확인용입니다":
+    view==="schedule"&&scheduleView==="today"?"체크 버튼으로 바로 완료 처리할 수 있어요":
+    view==="schedule"&&scheduleView==="board"?"날짜 칸을 누르면 그날 일정 추가 · 일정을 누르면 수정":
     "날짜를 누르면 일정 추가 · 일정을 누르면 수정";
 }
 
@@ -745,8 +823,8 @@ function wkKey(d){return fmt(weekStart(d));} // 그 주 일요일 날짜 = 주 �
 function weekMemos(monKey){return DATA.filter(e=>!e.date&&e.week===monKey);}
 function renderBoard(){
   const base=weekStart(cur);
-  let html=`<div class="nav">
-    <button class="addbar" id="addTop">+ 새 일정 추가</button>
+  let html=scheduleToggleHTML();
+  html+=`<div class="nav" style="justify-content:flex-end">
     <div class="arrows">
       <button class="btn today" data-go="today">이번 주</button>
       <button class="btn" data-go="prev">‹ 이전</button>
@@ -765,9 +843,9 @@ function renderBoard(){
       const evs=evOf(ds);const isT=ds===todayStr();const wknd=d.getDay()===0||d.getDay()===6;
       let inner=`<div class="bhead"><span class="bd">${d.getDate()}</span>${DOW[d.getDay()]}</div>`;
       evs.slice(0,4).forEach(e=>{
-        const t=e.time?`<span class="bt">${e.time}</span>`:"";
+        const t=e.time?`<span class="bt">${esc(e.time)}</span>`:"";
         const dn=e.status==="완료"?"done":"";
-        inner+=`<div class="bev ${e.kind} ${dn}" data-id="${e.id}">${t}<span class="bn">${e.site}</span></div>`;
+        inner+=`<div class="bev ${esc(e.kind)} ${dn}" data-id="${e.id}">${t}<span class="bn">${esc(e.site)}</span></div>`;
       });
       if(evs.length>4)inner+=`<div class="bmore" data-day="${ds}">+${evs.length-4}개 더 보기</div>`;
       html+=`<div class="bcell ${isT?'today':''} ${wknd?'weekend':''}" data-date="${ds}">${inner}</div>`;
@@ -783,8 +861,8 @@ function renderBoard(){
         html+=`<div class="wmemo-item ${dn}">
           <button class="wmemo-btn" data-wdate="${e.id}" title="날짜 잡기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></button>
           <button class="wmemo-btn" data-wtodo="${e.id}" title="할일로 보내기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></button>
-          <span class="tag ${e.kind} wtag">${e.kind}</span>
-          <span class="wmemo-text">${e.site}${e.desc?" · "+e.desc:""}</span>
+          <span class="tag ${esc(e.kind)} wtag">${esc(e.kind)}</span>
+          <span class="wmemo-text">${esc(e.site)}${e.desc?" · "+esc(e.desc):""}</span>
         </div>`;
       });
       html+=`</div></div>`;
@@ -819,8 +897,8 @@ function attentionHTML(){
   let rows="";
   od.forEach(e=>{
     rows+=`<div class="attn-row">
-      <span class="attn-date">${e.date.slice(5)}</span>
-      <span class="attn-body">${e.site}${e.desc?" · "+e.desc:""} <span class="tag ${e.kind}">${e.kind}</span></span>
+      <span class="attn-date">${esc(e.date.slice(5))}</span>
+      <span class="attn-body">${esc(e.site)}${e.desc?" · "+esc(e.desc):""} <span class="tag ${esc(e.kind)}">${esc(e.kind)}</span></span>
       <button class="attn-check" data-done="${e.id}">완료</button></div>`;
   });
   return `<div class="attn-bar">
@@ -832,8 +910,8 @@ function attentionHTML(){
 function renderToday(){
   const d=new Date(),ds=todayStr();
   const evs=evOf(ds);
-  let html=`<div class="nav"><div class="range">오늘 · ${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]})</div>
-    <button class="addbar" id="addTop">+ 일정 추가</button></div>`;
+  let html=scheduleToggleHTML();
+  html+=`<div class="nav"><div class="range">오늘 · ${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]})</div></div>`;
   if(!evs.length)html+=`<div class="empty">오늘 일정이 없습니다</div>`;
   evs.forEach(e=>html+=todayCard(e));
   // 내일
@@ -848,13 +926,13 @@ function renderToday(){
 }
 function todayCard(e){
   const done=e.status==="완료";
-  const time=e.time?`<div class="ttime">${e.time}</div>`:`<div class="ttime none">종일</div>`;
+  const time=e.time?`<div class="ttime">${esc(e.time)}</div>`:`<div class="ttime none">종일</div>`;
   return `<div class="tcard ${done?'done':''}">${time}
     <div class="tbody" data-id="${e.id}" style="cursor:pointer">
-      <div class="tsite">${e.site||"(제목없음)"}</div>
-      ${e.desc?`<div class="tdesc">${e.desc}</div>`:""}
-      ${e.memo?`<div class="tmemo">메모: ${e.memo}</div>`:""}
-      <div class="ttags"><span class="tag ${e.kind}">${e.kind}</span></div>
+      <div class="tsite">${esc(e.site)||"(제목없음)"}</div>
+      ${e.desc?`<div class="tdesc">${esc(e.desc)}</div>`:""}
+      ${e.memo?`<div class="tmemo">메모: ${esc(e.memo)}</div>`:""}
+      <div class="ttags"><span class="tag ${esc(e.kind)}">${esc(e.kind)}</span></div>
     </div>
     <button class="tcheck ${done?'is-done':''}" data-done="${e.id}">${done?"✓ 완료":"완료"}</button>
   </div>`;
@@ -875,12 +953,12 @@ function renderMonth(){
     const MAX=3;
     evs.slice(0,MAX).forEach(e=>{
       const dn=e.status==="완료"?"done":"";
-      inner+=`<div class="ev ${e.kind} ${dn}" data-id="${e.id}">${e.site}</div>`;
+      inner+=`<div class="ev ${esc(e.kind)} ${dn}" data-id="${e.id}">${esc(e.site)}</div>`;
     });
     if(evs.length>MAX)inner+=`<div class="ev-more" data-date="${ds}">+${evs.length-MAX}개</div>`;
     cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-date="${ds}">${inner}</div>`;
   }
-  V.innerHTML=`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
+  V.innerHTML=scheduleToggleHTML()+`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
     <div class="arrows"><button class="btn today" data-go="today">오늘</button>
     <button class="btn" data-go="prev">‹</button><button class="btn" data-go="next">›</button></div></div>
     <div class="cal" id="monthCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
@@ -901,35 +979,27 @@ function renderMonth(){
 /* ===== 작업자(인건비) ===== */
 function wkOf(ds){return WORKERS.filter(w=>w.date===ds).sort(byTime);}
 function fmtWon(n){n=Number(n)||0;return n.toLocaleString("ko-KR");}
+let wkExpand={}; // 현장별 펼침 상태 {key:true}
+let wkListExpand={}; // 리스트 메모 펼침 상태 {id:true}
 function renderWorker(){
   const y=cur.getFullYear(),m=cur.getMonth();
-  // 월 합계 (현재 보고 있는 달 기준)
   const mPrefix=y+"-"+String(m+1).padStart(2,"0");
   const monthRows=WORKERS.filter(w=>w.date&&w.date.startsWith(mPrefix));
-  let total=0,paid=0;const days=new Set();
-  monthRows.forEach(w=>{const p=Number(w.pay)||0;total+=p;if(w.paid==="지급완료")paid+=p;if(w.date)days.add(w.date);});
-  const unpaid=total-paid;
 
-  let html=`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
+  let html=`<div class="vtoggle" style="margin:4px 0 12px">
+    <button data-wview="list" class="${workerView==='list'?'on':''}">리스트</button>
+    <button data-wview="cal" class="${workerView==='cal'?'on':''}">달력</button>
+    <button data-wview="site" class="${workerView==='site'?'on':''}">현장별</button></div>`;
+  html+=`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
     <div class="arrows"><button class="btn today" data-go="today">오늘</button>
     <button class="btn" data-go="prev">‹</button><button class="btn" data-go="next">›</button></div></div>`;
-  html+=`<div class="vtoggle">
-    <button data-wview="cal" class="${workerView==='cal'?'on':''}">📅 달력</button>
-    <button data-wview="list" class="${workerView==='list'?'on':''}">📋 리스트</button>
-    <button data-wview="pay" class="${workerView==='pay'?'on':''}">💰 지급</button></div>`;
 
-  if(workerView==="pay"){
-    html+=`<div class="sum-bar">
-      <div class="sum-card"><div class="sl">총 인건비</div><div class="sv">${fmtWon(total)}</div></div>
-      <div class="sum-card unpaid"><div class="sl">미지급</div><div class="sv">${fmtWon(unpaid)}</div></div>
-      <div class="sum-card paid"><div class="sl">지급완료</div><div class="sv">${fmtWon(paid)}</div></div>
-      <div class="sum-card"><div class="sl">작업일</div><div class="sv">${days.size}일</div></div>
-    </div>`;
-    html+=workerPayHTML(monthRows);
-  }else if(workerView==="cal"){
-    html+=workerCalHTML(y,m);
-  }else{
+  if(workerView==="list"){
     html+=workerListHTML(monthRows);
+  }else if(workerView==="site"){
+    html+=workerBySiteHTML(monthRows);
+  }else{
+    html+=workerCalHTML(y,m);
   }
   V.innerHTML=html;
   if(workerView==="cal"){
@@ -944,6 +1014,122 @@ function renderWorker(){
     }
   }
 }
+// 펼쳐진 한 건(작업 row) — 현장별/인부별 공용. label은 그 뷰에서 강조할 텍스트(현장별이면 인부명, 인부별이면 현장명)
+function wkSubRowHTML(w,label,labelSub){
+  const isPaid=w.paid==="지급완료";
+  const d=w.date?new Date(w.date+"T00:00"):null;
+  const dstr=d?`${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`:"";
+  const hasPay=(Number(w.pay)||0)>0;
+  const right=hasPay
+    ?`<div class="wk-sub-right">
+      <div class="wk-sub-pay">${fmtWon(w.pay)}원</div>
+      <button class="wk-paybtn ${isPaid?'is-paid':''}" data-wpaid="${w.id}">${isPaid?"✓ 지급":"미지급"}</button>
+    </div>`
+    :"";
+  return `<div class="wk-sub ${isPaid&&hasPay?'paid':''}" data-wid="${w.id}">
+    <div class="wk-sub-main">
+      <div class="wk-sub-top">${esc(label)} <span class="tag wk wk-${esc(w.kind)}">${esc(w.kind)}</span></div>
+      <div class="wk-sub-meta">${dstr}${labelSub?" · "+esc(labelSub):""}${w.memo?" · "+esc(w.memo):""}</div>
+    </div>
+    ${right}
+  </div>`;
+}
+// 메모를 리스트용 항목으로 쪼개기
+function memoItems(memo){
+  return String(memo||"")
+    .split(/\n|[.。]+| ?· ?/)
+    .map(s=>s.trim())
+    .filter(Boolean);
+}
+// 리스트 — 날짜/작업자/현장을 먼저 보고, 누르면 메모가 아래로 펼쳐지는 화면
+function workerListHTML(rows){
+  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
+  const items=rows.slice().sort((a,b)=>{
+    const ad=(a.date||"")+" "+(a.time||"99:99");
+    const bd=(b.date||"")+" "+(b.time||"99:99");
+    return ad<bd?-1:ad>bd?1:0;
+  });
+  const groups={};
+  items.forEach(w=>{const key=w.date||"날짜 미정";(groups[key]=groups[key]||[]).push(w);});
+  let html=`<div class="wk-list">`;
+  Object.keys(groups).forEach(key=>{
+    const group=groups[key];
+    const d=key!=="날짜 미정"?new Date(key+"T00:00"):null;
+    const dstr=d?`${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}(${DOW[d.getDay()]})`:"날짜 미정";
+    html+=`<div class="wk-date-card"><div class="wk-date-h"><span>${dstr}</span><span class="wk-date-count">${group.length}건</span></div>`;
+    group.forEach(w=>{
+      const bits=memoItems(w.memo);
+      const title=bits[0] || "";
+      const rest=bits.length?bits.slice(1):[];
+      const open=!!wkListExpand[w.id];
+      html+=`<div class="wk-list-card ${open?'open':''}" data-wlist="${w.id}">
+        <div class="wk-list-head">
+          <div class="wk-list-time">${esc(w.time)||"종일"}</div>
+          <div class="wk-list-main">
+            <div class="wk-list-line">
+              <span class="wk-list-worker">${esc(w.worker||"작업자 미정")}</span>
+              <span class="tag wk wk-${esc(w.kind)}">${esc(w.kind)}</span>
+              <span class="wk-list-site-inline">${esc(w.site||"현장 미정")}</span>
+            </div>
+          </div>
+          <div class="wk-list-more">⌄</div>
+        </div>
+        <div class="wk-list-memo">
+          ${title?`<div class="wk-list-title">${esc(title)}</div>`:""}
+          ${rest.length?rest.map(x=>`<div class="wk-list-item">${esc(x)}</div>`).join(""):""}
+          <div class="wk-list-memo-actions"><button class="wk-list-edit" data-wmemoedit="${w.id}">수정</button></div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+// 현장별 — 현장 카드(투입 인원 중심) 펼치면 그 현장에 투입된 인부 목록
+function workerBySiteHTML(rows){
+  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
+  const bySite={};
+  rows.forEach(w=>{
+    const key=w.site?normSite(w.site):"__none__";
+    if(!bySite[key])bySite[key]={name:w.site||"현장 미정",items:[],total:0,unpaidCnt:0,workers:new Set()};
+    const g=bySite[key];g.items.push(w);
+    const p=Number(w.pay)||0;g.total+=p;if(p>0&&w.paid!=="지급완료")g.unpaidCnt++;
+    if(w.worker)g.workers.add(w.worker);
+  });
+  // 투입 인원 많은 순 → 같으면 건수 순
+  const list=Object.entries(bySite).sort((a,b)=>b[1].workers.size-a[1].workers.size||b[1].items.length-a[1].items.length);
+  let html="";
+  list.forEach(([key,g])=>{
+    const open=!!wkExpand["site:"+key];
+    const items=g.items.slice().sort((a,b)=>(a.date<b.date?1:a.date>b.date?-1:0));
+    // 금액은 입력된 게 있을 때만 부차적으로 표시
+    let money="";
+    if(g.total>0){
+      money=`<div class="wk-card-total"><span class="wk-total-label">합계</span> ${fmtWon(g.total)}원</div>`;
+    }
+    let unpaidMark="";
+    if(g.unpaidCnt>0)unpaidMark=` · <span class="wk-unpaid-mark">미지급 ${g.unpaidCnt}건</span>`;
+    html+=`<div class="wk-card ${open?'open':''}">
+      <div class="wk-card-h" data-wexpand="site:${esc(key)}">
+        <div class="wk-card-info">
+          <div class="wk-card-name">${esc(g.name)}</div>
+          <div class="wk-card-sub">인부 ${g.workers.size}명 · ${g.items.length}건${unpaidMark}</div>
+        </div>
+        <div class="wk-card-right">
+          ${money}
+          <span class="cust-chevron">▾</span>
+        </div>
+      </div>
+      <div class="wk-card-body ${open?'open':''}">
+        ${items.map(w=>wkSubRowHTML(w,w.worker||"(이름없음)",w.time||"")).join("")}
+      </div>
+    </div>`;
+  });
+  return html;
+}
+// 인부별 뷰는 제거됨 (달력 + 현장별 2뷰 체제)
 function workerCalHTML(y,m){
   const first=new Date(y,m,1),start=new Date(first);
   start.setDate(1-first.getDay());
@@ -957,7 +1143,7 @@ function workerCalHTML(y,m){
     const MAX=3;
     ws.slice(0,MAX).forEach(w=>{
       const pd=w.paid==="지급완료"?"done":"";
-      inner+=`<div class="ev wk-${w.kind} ${pd}" data-wid="${w.id}">${w.worker||w.kind}</div>`;
+      inner+=`<div class="ev wk-${esc(w.kind)} ${pd}" data-wid="${w.id}">${esc(w.worker||w.kind)}</div>`;
     });
     if(ws.length>MAX)inner+=`<div class="ev-more" data-wday="${ds}">+${ws.length-MAX}명</div>`;
     cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-wdate="${ds}">${inner}</div>`;
@@ -965,60 +1151,7 @@ function workerCalHTML(y,m){
   return `<div class="cal" id="workerCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
     <div class="grid">${cells}</div></div>`;
 }
-function workerListHTML(rows){
-  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
-  // 날짜 내림차순 그룹 — 금액/지급 정보 없이 가볍게 보기
-  const byDay={};
-  rows.forEach(w=>{(byDay[w.date]=byDay[w.date]||[]).push(w);});
-  const dates=Object.keys(byDay).sort((a,b)=>a<b?1:-1);
-  let html="";
-  dates.forEach(ds=>{
-    const list=byDay[ds].sort(byTime);
-    const d=new Date(ds+"T00:00");
-    html+=`<div class="wk-day">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]}) · ${list.length}명</div>`;
-    list.forEach(w=>{
-      const isPaid=w.paid==="지급완료";
-      html+=`<div class="wk-row ${isPaid?'paid':''}" data-wid="${w.id}">
-        <div class="wk-main">
-          <div class="wk-name">${w.worker||"(이름없음)"} <span class="tag wk wk-${w.kind}">${w.kind}</span></div>
-          <div class="wk-meta">${w.site?w.site:"현장 미정"}${w.time?" · "+w.time:""}${w.memo?" · "+w.memo:""}</div>
-        </div>
-      </div>`;
-    });
-  });
-  return html;
-}
-function workerPayHTML(rows){
-  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
-  // 날짜 내림차순 그룹 — 금액 + 지급여부 토글 포함
-  const byDay={};
-  rows.forEach(w=>{(byDay[w.date]=byDay[w.date]||[]).push(w);});
-  const dates=Object.keys(byDay).sort((a,b)=>a<b?1:-1);
-  let html="";
-  dates.forEach(ds=>{
-    const list=byDay[ds].sort(byTime);
-    const d=new Date(ds+"T00:00");
-    const daySum=list.reduce((s,w)=>s+(Number(w.pay)||0),0);
-    html+=`<div class="wk-day">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]}) · ${list.length}명
-      <span class="wk-day-sum">${fmtWon(daySum)}원</span></div>`;
-    list.forEach(w=>{
-      const isPaid=w.paid==="지급완료";
-      html+=`<div class="wk-row ${isPaid?'paid':''}" data-wid="${w.id}">
-        <div class="wk-main">
-          <div class="wk-name">${w.worker||"(이름없음)"} <span class="tag wk wk-${w.kind}">${w.kind}</span></div>
-          <div class="wk-meta">${w.site?w.site:"현장 미정"}${w.time?" · "+w.time:""}${w.memo?" · "+w.memo:""}</div>
-        </div>
-        <div class="wk-right">
-          <div class="wk-pay">${fmtWon(w.pay)}원</div>
-          <button class="wk-paybtn ${isPaid?'is-paid':''}" data-wpaid="${w.id}">${isPaid?"✓ 지급완료":"미지급"}</button>
-        </div>
-      </div>`;
-    });
-  });
-  return html;
-}
-
-/* ===== 현장별 ===== */
+/* ===== 현장별(일정) ===== */
 const STAGES=["상담","견적","계약","시공","완료"];
 function kindToStage(k){return k==="견적"?1:k==="실측"?2:k==="공사"?3:0;}
 function inferStage(evs){
@@ -1090,21 +1223,21 @@ function renderCust(){
     const evs=normToEvs[norm]||[];const info=SITE_INFO[name]||findInfo(name);
     return [name,info?.customer,info?.note,...evs.map(e=>e.desc+" "+e.memo)].join(" ").toLowerCase().includes(q);
   }):visible;
-  let html=`<input class="search" id="custSearch" placeholder="현장명, 고객명, 메모 검색" value="${custQuery}">`;
+  let html=`<input class="search" id="custSearch" placeholder="현장명, 고객명, 메모 검색" value="${esc(custQuery)}">`;
   filtered.forEach((name,idx)=>{
     const norm=normSite(name);
     const evs=(normToEvs[norm]||[]).sort((a,b)=>a.date<b.date?-1:1);
     const info=SITE_INFO[name]||findInfo(name);
     const meta=info?.customer||"";
     const recent=evs.length?(()=>{const le=evs[evs.length-1];const dw=DOW[new Date(le.date+"T00:00").getDay()];return le.date.slice(5)+"("+dw+") "+(le.desc||le.kind);})():"일정 없음";
-    const noteVal=(info?.note||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-    const ss=name.replace(/"/g,"&quot;");
+    const noteVal=esc(info?.note||"");
+    const ss=esc(name);
     const first=idx===0,last=idx===filtered.length-1;
     html+=`<div class="cust" id="cust-${cssid(name)}">
       <div class="cust-header" data-cust="${ss}">
         <div class="cust-info">
-          <div class="cust-name">${name}${info?.hidden?` <span style="font-size:11px;color:var(--ink3);font-weight:400">(숨김)</span>`:"" }</div>
-          <div class="cust-sub">${meta?meta+" · ":""}최근: ${recent}</div>
+          <div class="cust-name">${esc(name)}${info?.hidden?` <span style="font-size:11px;color:var(--ink3);font-weight:400">(숨김)</span>`:"" }</div>
+          <div class="cust-sub">${meta?esc(meta)+" · ":""}최근: ${esc(recent)}</div>
         </div>
         <div class="cust-actions">
           <button class="site-move" data-dir="up" data-site="${ss}"${first?" disabled":""}>▲</button>
@@ -1119,8 +1252,8 @@ function renderCust(){
       html+=`<div class="cust-ev-label">관련 일정</div>`;
       evs.forEach(e=>{const t=e.time||"종일";
         const dw=DOW[new Date(e.date+"T00:00").getDay()];
-        html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${e.date.slice(5)}(${dw}) ${t}</span>
-          <span>${e.desc||""} <span class="tag ${e.kind}">${e.kind}</span>${e.memo?`<span style="color:var(--ink3);font-size:12px;margin-left:4px">· ${e.memo}</span>`:""}</span></div>`;});
+        html+=`<div class="mini-ev" data-id="${e.id}"><span class="md">${esc(e.date.slice(5))}(${dw}) ${esc(t)}</span>
+          <span>${esc(e.desc||"")} <span class="tag ${esc(e.kind)}">${esc(e.kind)}</span>${e.memo?`<span style="color:var(--ink3);font-size:12px;margin-left:4px">· ${esc(e.memo)}</span>`:""}</span></div>`;});
     }
     html+=`</div></div>`;
   });
@@ -1160,7 +1293,7 @@ function renderTodo(){
   let html=`<div class="paste-box">
     <div class="paste-h" id="pasteToggle"><span>📋</span> 노트 붙여넣기로 한 번에 정리 <span style="margin-left:auto">${pasteOpen?"▴":"▾"}</span></div>
     <div class="paste-body ${pasteOpen?'open':''}">
-      <textarea id="pasteArea" placeholder="핸드폰 노트 내용을 그대로 붙여넣고 [정리]를 누르세요.&#10;&#10;예:&#10;[ ] EK이종환 이사님 요청사항 전달&#10;[ ] > 계단 제작 요청&#10;[ ] 효성 견적 수정">${pastePreview?pastePreview.raw:(localStorage.getItem('smh_paste_draft')||"")}</textarea>
+      <textarea id="pasteArea" placeholder="핸드폰 노트 내용을 그대로 붙여넣고 [정리]를 누르세요.&#10;&#10;예:&#10;[ ] EK이종환 이사님 요청사항 전달&#10;[ ] > 계단 제작 요청&#10;[ ] 효성 견적 수정">${esc(pastePreview?pastePreview.raw:(localStorage.getItem('smh_paste_draft')||""))}</textarea>
       <div class="paste-btns">
         <button class="btn" id="pasteClear">지우기</button>
         <button class="btn go" id="pasteGo">정리하기</button>
@@ -1168,8 +1301,8 @@ function renderTodo(){
   if(pastePreview&&pastePreview.items.length){
     html+=`<div class="preview"><div class="preview-h">정리 결과 ${pastePreview.items.length}개 · 맞으면 추가하세요</div>`;
     pastePreview.items.forEach(it=>{
-      html+=`<div class="pv-item">☐ ${it.text} ${it.site?`<span class="todo-site">${it.site}</span>`:""} <span class="tag ${it.kind}">${it.kind}</span>`;
-      it.sub.forEach(s=>html+=`<span class="pv-sub">› ${s}</span>`);
+      html+=`<div class="pv-item">☐ ${esc(it.text)} ${it.site?`<span class="todo-site">${esc(it.site)}</span>`:""} <span class="tag ${esc(it.kind)}">${esc(it.kind)}</span>`;
+      it.sub.forEach(s=>html+=`<span class="pv-sub">› ${esc(s)}</span>`);
       html+=`</div>`;
     });
     html+=`<div class="paste-btns"><button class="btn go" id="pasteAdd">이대로 ${pastePreview.items.length}개 추가</button></div></div>`;
@@ -1190,10 +1323,10 @@ function renderTodo(){
 function todoItemHTML(t){
   const dn=t.done?"done":"";
   let sub="";
-  if(t.sub&&t.sub.length)sub=`<div class="todo-sub">${t.sub.map(s=>`<span class="ts">${s}</span>`).join("")}</div>`;
+  if(t.sub&&t.sub.length)sub=`<div class="todo-sub">${t.sub.map(s=>`<span class="ts">${esc(s)}</span>`).join("")}</div>`;
   let tags=`<div class="todo-tags">`;
-  tags+=`<span class="tag ${t.kind}">${t.kind}</span>`;
-  if(t.site)tags+=`<span class="todo-site">${t.site}</span>`;
+  tags+=`<span class="tag ${esc(t.kind)}">${esc(t.kind)}</span>`;
+  if(t.site)tags+=`<span class="todo-site">${esc(t.site)}</span>`;
   if(t.promoted)tags+=`<span class="todo-promoted">일정으로 옮김</span>`;
   else if(!t.done){
     tags+=`<button class="todo-date-btn" data-todoschedule="${t.id}">+ 날짜 잡기</button>`;
@@ -1202,7 +1335,7 @@ function todoItemHTML(t){
   tags+=`</div>`;
   return `<div class="todo-item ${dn}" data-todoid="${t.id}">
     <div class="todo-check" data-todocheck="${t.id}">${t.done?"✓":""}</div>
-    <div class="todo-body"><div class="todo-text">${t.text||t.site}</div>${sub}${tags}</div>
+    <div class="todo-body"><div class="todo-text">${esc(t.text||t.site)}</div>${sub}${tags}</div>
     <button class="todo-del" data-tdel="${t.id}">✕</button></div>`;
 }
 function parseNote(raw){
@@ -1233,12 +1366,21 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   if(view!=="todo"){pasteOpen=false;pastePreview=null;}render();});
 
 V.addEventListener("click",e=>{
+  // ----- 일정 기간 토글 -----
+  const sv=e.target.closest("[data-sview]");
+  if(sv){scheduleView=sv.dataset.sview;render();return;}
   // ----- 작업자 -----
   const wv=e.target.closest("[data-wview]");
   if(wv){workerView=wv.dataset.wview;render();return;}
   const wpaid=e.target.closest("[data-wpaid]");
   if(wpaid){e.stopPropagation();const id=Number(wpaid.dataset.wpaid);
     const w=WORKERS.find(x=>x.id===id);if(w){w.paid=w.paid==="지급완료"?"미지급":"지급완료";saveWorkers();render();}return;}
+  const wmemoEdit=e.target.closest("[data-wmemoedit]");
+  if(wmemoEdit){e.stopPropagation();openWorkerMemoModal(Number(wmemoEdit.dataset.wmemoedit));return;}
+  const wlist=e.target.closest("[data-wlist]");
+  if(wlist){const id=Number(wlist.dataset.wlist);wkListExpand[id]=!wkListExpand[id];render();return;}
+  const wexp=e.target.closest("[data-wexpand]");
+  if(wexp){const k=wexp.dataset.wexpand;wkExpand[k]=!wkExpand[k];render();return;}
   const wmore=e.target.closest("[data-wday]");
   if(wmore){openWorkerDay(wmore.dataset.wday);return;}
   const wid=e.target.closest("[data-wid]");
@@ -1260,7 +1402,7 @@ V.addEventListener("click",e=>{
     const t=TODOS.find(x=>x.id===id);if(!t)return;
     if(!confirm("이번 주 메모로 이동할까요?"))return;
     const weekKey=wkKey(new Date());
-    DATA.push({id:Date.now(),date:"",week:weekKey,time:"",site:t.site||t.text,
+    DATA.push({id:uid(),date:"",week:weekKey,time:"",site:t.site||t.text,
       desc:t.site?t.text:"",kind:t.kind||"기타",status:"예정",memo:t.sub?t.sub.join(" / "):""});
     TODOS=TODOS.filter(x=>x.id!==id);save();saveTodos();render();return;
   }
@@ -1274,7 +1416,7 @@ V.addEventListener("click",e=>{
   if(e.target.closest("#pasteClear")){pastePreview=null;localStorage.removeItem("smh_paste_draft");render();return;}
   if(e.target.closest("#pasteAdd")){
     pastePreview.items.forEach(it=>{
-      TODOS.push({id:Date.now()+Math.floor(Math.random()*1000),text:it.text,site:it.site,sub:it.sub,kind:it.kind,done:false});
+      TODOS.push({id:uid(),text:it.text,site:it.site,sub:it.sub,kind:it.kind,done:false});
     });
     saveTodos();pastePreview=null;pasteOpen=false;localStorage.removeItem("smh_paste_draft");render();return;}
   const titem=e.target.closest("[data-todoid]");
@@ -1286,7 +1428,7 @@ V.addEventListener("click",e=>{
   const go=e.target.closest("[data-go]");
   if(go){const g=go.dataset.go;
     if(g==="today")cur=new Date();
-    else if(view==="month"||view==="worker")cur.setMonth(cur.getMonth()+(g==="next"?1:-1));
+    else if(view==="worker"||(view==="schedule"&&scheduleView==="month"))cur.setMonth(cur.getMonth()+(g==="next"?1:-1));
     else cur.setDate(cur.getDate()+(g==="next"?14:-14));
     render();return;}
   if(e.target.closest("#addTop")){openModal(null);return;}
@@ -1302,7 +1444,7 @@ V.addEventListener("click",e=>{
     const id=Number(wtodo.dataset.wtodo);
     const ev=DATA.find(x=>x.id===id);if(!ev)return;
     if(!confirm("할일 탭으로 이동할까요?"))return;
-    const t={id:Date.now(),text:ev.desc,site:ev.site,
+    const t={id:uid(),text:ev.desc,site:ev.site,
       kind:ev.kind||"기타",done:false,promoted:false,
       sub:ev.memo?[ev.memo]:[],order:TODOS.length};
     TODOS.push(t);saveTodos();
@@ -1393,17 +1535,18 @@ document.getElementById("tvDel").onclick=()=>{
 document.getElementById("tvSchedule").onclick=()=>{
   const id=todoDetailId;closeTodoDetail();promoteTodo(id);};
 function openDay(ds){
+  dayov.dataset.mode="event";
   const evs=evOf(ds);
   const d=new Date(ds+"T00:00");
   document.getElementById("dayTitle").textContent=`${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]}) 일정`;
   let html="";
   evs.forEach(e=>{
-    const t=e.time?`<div class="dl-time">${e.time}</div>`:`<div class="dl-time none">종일</div>`;
+    const t=e.time?`<div class="dl-time">${esc(e.time)}</div>`:`<div class="dl-time none">종일</div>`;
     const dn=e.status==="완료"?"done":"";
     html+=`<div class="dl-row ${dn}" data-id="${e.id}">${t}
-      <div class="dl-body"><div class="dl-site">${e.site}</div>
-      ${e.desc?`<div class="dl-desc">${e.desc}</div>`:""}
-      <span class="tag ${e.kind}" style="margin-top:5px;display:inline-block">${e.kind}</span></div></div>`;
+      <div class="dl-body"><div class="dl-site">${esc(e.site)}</div>
+      ${e.desc?`<div class="dl-desc">${esc(e.desc)}</div>`:""}
+      <span class="tag ${esc(e.kind)}" style="margin-top:5px;display:inline-block">${esc(e.kind)}</span></div></div>`;
   });
   document.getElementById("dayList").innerHTML=html;
   dayov.classList.add("show");
@@ -1454,7 +1597,7 @@ document.getElementById("dvSetDate").onclick=()=>{closeDetail();openModal(detail
 document.getElementById("dvToTodo").onclick=()=>{
   if(!confirm("할일 탭으로 이동할까요?"))return;
   const ev=DATA.find(x=>x.id===detailId);if(!ev)return;
-  const t={id:Date.now(),text:ev.desc,site:ev.site,
+  const t={id:uid(),text:ev.desc,site:ev.site,
     kind:ev.kind||"기타",done:false,promoted:false,
     sub:ev.memo?[ev.memo]:[],order:TODOS.length};
   TODOS.push(t);saveTodos();
@@ -1483,8 +1626,8 @@ function initSiteAc(){
     const q=inp.value.replace(/\s+/g,"").toLowerCase();
     const names=getSiteNames();
     const matches=q?names.filter(n=>normSite(n).toLowerCase().includes(q)):names;
-    if(!matches.length||!q&&!document.activeElement===inp){list.classList.remove("open");return;}
-    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${n}</div>`).join("");
+    if(!matches.length||(!q&&document.activeElement!==inp)){list.classList.remove("open");return;}
+    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${esc(n)}</div>`).join("");
     list.classList.add("open");
     list.querySelectorAll(".site-ac-item").forEach(item=>{
       item.addEventListener("mousedown",e=>{e.preventDefault();inp.value=item.textContent;list.classList.remove("open");});
@@ -1534,7 +1677,7 @@ document.getElementById("cancelBtn").onclick=()=>{promoteTodoId=null;closeModal(
 document.getElementById("saveBtn").onclick=()=>{
   const g=x=>document.getElementById(x).value;
   const date=g("fDate").trim();
-  const rec={date:date,time:g("fTime"),site:g("fSite").trim(),desc:g("fDesc").trim(),
+  const rec={date:date,time:g("fTime").trim(),site:g("fSite").trim(),desc:g("fDesc").trim(),
     kind:curKind,memo:g("fMemo").trim()};
   if(!rec.site){alert("현장/고객명은 입력해 주세요");return;}
   if(promoteTodoId&&!date){alert("일정으로 올리려면 날짜를 입력해 주세요");return;}
@@ -1542,7 +1685,7 @@ document.getElementById("saveBtn").onclick=()=>{
   else if(curWeek){rec.date="";rec.week=curWeek;}
   else{alert("날짜를 입력하거나, 주간 메모로 추가해 주세요");return;}
   if(editId){const ex=DATA.find(x=>x.id===editId);Object.assign(ex,rec);if(!ex.status)ex.status="예정";}
-  else{rec.id=Date.now();rec.status="예정";DATA.push(rec);}
+  else{rec.id=uid();rec.status="예정";DATA.push(rec);}
   save();
   if(promoteTodoId){const t=TODOS.find(x=>x.id===promoteTodoId);if(t)t.promoted=true;saveTodos();promoteTodoId=null;}
   closeModal();render();
@@ -1579,11 +1722,41 @@ function initWorkerAc(){
     const names=getWorkerNames();
     const matches=q?names.filter(n=>n.replace(/\s+/g,"").toLowerCase().includes(q)):names;
     if(!matches.length){list.classList.remove("open");return;}
-    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${n}</div>`).join("");
+    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${esc(n)}</div>`).join("");
     list.classList.add("open");
     list.querySelectorAll(".site-ac-item").forEach(item=>{
-      item.addEventListener("mousedown",ev=>{ev.preventDefault();inp.value=item.textContent;list.classList.remove("open");});
-      item.addEventListener("touchend",ev=>{ev.preventDefault();inp.value=item.textContent;list.classList.remove("open");inp.blur();});
+      const pick=name=>{
+        inp.value=name;
+        list.classList.remove("open");
+        const payInp=document.getElementById("wPay");
+        if(payInp&&!payInp.value.trim()){
+          const past=WORKERS.filter(w=>w.worker===name&&w.pay).sort((a,b)=>a.date<b.date?1:-1);
+          if(past.length)payInp.value=past[0].pay;
+        }
+      };
+      item.addEventListener("mousedown",ev=>{ev.preventDefault();pick(item.textContent);});
+      item.addEventListener("touchend",ev=>{ev.preventDefault();pick(item.textContent);inp.blur();});
+    });
+  }
+  inp.addEventListener("input",showAc);
+  inp.addEventListener("focus",showAc);
+  inp.addEventListener("blur",()=>setTimeout(()=>list.classList.remove("open"),150));
+}
+// 작업자 모달 - 현장 자동완성 (일정 탭의 getSiteNames 재활용)
+function initWorkerSiteAc(){
+  const inp=document.getElementById("wSite");
+  const list=document.getElementById("wSiteAcList");
+  if(!inp||!list)return;
+  function showAc(){
+    const q=inp.value.replace(/\s+/g,"").toLowerCase();
+    const names=getSiteNames();
+    const matches=q?names.filter(n=>normSite(n).toLowerCase().includes(q)):names;
+    if(!matches.length||(!q&&document.activeElement!==inp)){list.classList.remove("open");return;}
+    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${esc(n)}</div>`).join("");
+    list.classList.add("open");
+    list.querySelectorAll(".site-ac-item").forEach(item=>{
+      item.addEventListener("mousedown",e=>{e.preventDefault();inp.value=item.textContent;list.classList.remove("open");});
+      item.addEventListener("touchend",e=>{e.preventDefault();inp.value=item.textContent;list.classList.remove("open");inp.blur();});
     });
   }
   inp.addEventListener("input",showAc);
@@ -1606,6 +1779,7 @@ function openWorkerModal(id,presetDate){
   }
   wov.classList.add("show");
   initWorkerAc();
+  initWorkerSiteAc();
 }
 function closeWorkerModal(){wov.classList.remove("show");}
 document.getElementById("wCancel").onclick=closeWorkerModal;
@@ -1616,10 +1790,10 @@ document.getElementById("wSave").onclick=()=>{
   if(!date){alert("날짜를 입력해 주세요");return;}
   if(!worker){alert("작업자 이름을 입력해 주세요");return;}
   const payNum=Number(String(g("wPay")).replace(/[^\d.-]/g,""))||0;
-  const rec={date:date,time:g("wTime"),worker:worker,site:g("wSite").trim(),
+  const rec={date:date,time:g("wTime").trim(),worker:worker,site:g("wSite").trim(),
     kind:wCurKind,pay:payNum,paid:wCurPaid,memo:g("wMemo").trim()};
   if(wEditId){const ex=WORKERS.find(x=>x.id===wEditId);Object.assign(ex,rec);}
-  else{rec.id=Date.now();WORKERS.push(rec);}
+  else{rec.id=uid();WORKERS.push(rec);}
   saveWorkers();closeWorkerModal();render();
 };
 document.getElementById("wDel").onclick=()=>{
@@ -1635,15 +1809,35 @@ function openWorkerDay(ds){
   list.forEach(w=>{
     const isPaid=w.paid==="지급완료";
     html+=`<div class="dl-row ${isPaid?'done':''}" data-wid="${w.id}">
-      <div class="dl-time ${w.time?'':'none'}">${w.time||"종일"}</div>
-      <div class="dl-body"><div class="dl-site">${w.worker||"(이름없음)"} · ${fmtWon(w.pay)}원</div>
-      <div class="dl-desc">${w.site||"현장 미정"}${w.memo?" · "+w.memo:""}</div>
-      <span class="tag wk wk-${w.kind}" style="margin-top:5px;display:inline-block">${w.kind}</span></div></div>`;
+      <div class="dl-time ${w.time?'':'none'}">${esc(w.time)||"종일"}</div>
+      <div class="dl-body"><div class="dl-site">${esc(w.worker)||"(이름없음)"} · ${fmtWon(w.pay)}원</div>
+      <div class="dl-desc">${esc(w.site)||"현장 미정"}${w.memo?" · "+esc(w.memo):""}</div>
+      <span class="tag wk wk-${esc(w.kind)}" style="margin-top:5px;display:inline-block">${esc(w.kind)}</span></div></div>`;
   });
   document.getElementById("dayList").innerHTML=html;
   dayov.classList.add("show");
   dayov.dataset.mode="worker";
 }
+
+// 작업자 리스트 — 메모만 빠르게 수정
+const wmov=document.getElementById("wmov");
+let wMemoEditId=null;
+function openWorkerMemoModal(id){
+  const w=WORKERS.find(x=>x.id===id);if(!w)return;
+  wMemoEditId=id;
+  document.getElementById("wmemoTitle").textContent=`${w.worker||"작업자"} · ${w.site||"현장 미정"}`;
+  document.getElementById("wmemoText").value=w.memo||"";
+  wmov.classList.add("show");
+  setTimeout(()=>document.getElementById("wmemoText").focus(),80);
+}
+function closeWorkerMemoModal(){wmov.classList.remove("show");}
+document.getElementById("wmemoCancel").onclick=closeWorkerMemoModal;
+wmov.onclick=e=>{if(e.target===wmov)closeWorkerMemoModal();};
+document.getElementById("wmemoSave").onclick=()=>{
+  const w=WORKERS.find(x=>x.id===wMemoEditId);if(!w)return;
+  w.memo=document.getElementById("wmemoText").value.trim();
+  saveWorkers();closeWorkerMemoModal();wkListExpand[w.id]=true;render();
+};
 
 render();
 syncFromSheet();
