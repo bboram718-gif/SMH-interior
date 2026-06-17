@@ -293,6 +293,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .todo-promoted{font-size:11.5px;color:var(--teal);background:var(--teal-bg);padding:2px 8px;border-radius:5px}
 .todo-del{background:none;border:none;color:var(--ink3);font-size:14px;padding:4px 6px;cursor:pointer;flex-shrink:0;line-height:1;border-radius:6px}
 .todo-del:active{background:#fee;color:#c0392b}
+
+/* ===== 작업자(인건비) 탭 ===== */
+/* 공사 구분 색상 */
+.wk-전기{background:#fff3d6;color:#9a6b00}
+.wk-목공{background:#efe3d2;color:#7a5a30}
+.wk-도장{background:#e3eefb;color:#1f5fa8}
+.wk-철거{background:#fbe2db;color:#a33d22}
+.wk-설비{background:#dff3ef;color:#0f6e56}
+.wk-가구{background:#efe7fb;color:#5a44b0}
+.wk-도배{background:#fdeede;color:#a76a18}
+.wk-바닥{background:#e6f0e0;color:#4d7a36}
+.wk-기타{background:#eeede8;color:#6a6862}
+.tag.wk{font-weight:600}
+.ev.wk-전기,.ev.wk-목공,.ev.wk-도장,.ev.wk-철거,.ev.wk-설비,.ev.wk-가구,.ev.wk-도배,.ev.wk-바닥,.ev.wk-기타{}
+
+/* 보기 토글 */
+.vtoggle{display:flex;gap:4px;background:var(--gray-bg);border-radius:9px;padding:3px}
+.vtoggle button{flex:1;border:none;background:transparent;padding:7px 8px;font-size:13px;
+  font-weight:600;color:var(--ink2);border-radius:7px;cursor:pointer;white-space:nowrap}
+.vtoggle button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* 월 합계 바 */
+.sum-bar{display:flex;gap:8px;margin:10px 0 12px}
+.sum-card{flex:1;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 12px;text-align:center}
+.sum-card .sl{font-size:11px;color:var(--ink3);font-weight:500;margin-bottom:3px}
+.sum-card .sv{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.sum-card.paid .sv{color:var(--teal)}
+.sum-card.unpaid .sv{color:var(--coral)}
+
+/* 작업자 리스트 */
+.wk-day{font-size:12.5px;font-weight:700;color:var(--ink2);margin:16px 0 6px;padding-left:2px;
+  display:flex;align-items:center;gap:7px}
+.wk-day .wk-day-sum{font-size:11.5px;color:var(--ink3);font-weight:500;margin-left:auto}
+.wk-row{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;
+  margin-bottom:7px;display:flex;gap:11px;align-items:center;cursor:pointer;transition:.1s}
+.wk-row:hover{border-color:var(--line2)}
+.wk-row.paid{opacity:.62}
+.wk-row .wk-main{flex:1;min-width:0}
+.wk-row .wk-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.wk-row .wk-meta{font-size:12.5px;color:var(--ink3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-row .wk-right{text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.wk-row .wk-pay{font-size:15px;font-weight:700;color:var(--ink)}
+.wk-paybtn{border:1px solid var(--line2);background:transparent;color:var(--ink2);
+  border-radius:7px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-weight:600;white-space:nowrap}
+.wk-paybtn.is-paid{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.wk-grouphint{font-size:11.5px;color:var(--ink3);text-align:center;margin:2px 0 0}
 </style>
 </head>
 <body>
@@ -306,6 +352,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
       <button class="tab" data-v="todo">할일</button>
       <button class="tab" data-v="month">월간</button>
       <button class="tab" data-v="cust">현장</button>
+      <button class="tab" data-v="worker">작업자</button>
     </div>
   </div>
   <div id="view"></div>
@@ -403,6 +450,51 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
   </div>
 </div>
 
+<div class="ov" id="wov">
+  <div class="sheet">
+    <h2 id="wTitle">작업 추가</h2>
+    <div class="field">
+      <label>구분</label>
+      <div class="chips" id="wKindChips" style="flex-wrap:wrap;gap:6px">
+        <div class="chip on" data-k="전기">전기</div>
+        <div class="chip" data-k="목공">목공</div>
+        <div class="chip" data-k="도장">도장</div>
+        <div class="chip" data-k="철거">철거</div>
+        <div class="chip" data-k="설비">설비</div>
+        <div class="chip" data-k="가구">가구</div>
+        <div class="chip" data-k="도배">도배</div>
+        <div class="chip" data-k="바닥">바닥</div>
+        <div class="chip" data-k="기타">기타</div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="field"><label>날짜</label><input type="date" id="wDate"></div>
+      <div class="field"><label>시간 (선택)</label><input type="time" id="wTime"></div>
+    </div>
+    <div class="field"><label>작업자</label>
+      <div class="site-ac-wrap">
+        <input type="text" id="wWorker" placeholder="예: 김반장, 이기사" autocomplete="off">
+        <div class="site-ac-list" id="workerAcList"></div>
+      </div>
+    </div>
+    <div class="field"><label>현장</label><input type="text" id="wSite" placeholder="예: 필복싱, 롯데캐슬"></div>
+    <div class="field"><label>일당 (원)</label><input type="text" id="wPay" inputmode="numeric" placeholder="예: 250000"></div>
+    <div class="field"><label>메모 (선택)</label><textarea id="wMemo" placeholder="작업 내용, 참고사항 등"></textarea></div>
+    <div class="field" style="margin-bottom:4px">
+      <label>지급 여부</label>
+      <div class="chips" id="wPaidChips">
+        <div class="chip on" data-p="미지급">미지급</div>
+        <div class="chip" data-p="지급완료">지급완료</div>
+      </div>
+    </div>
+    <div class="acts">
+      <button class="btn del" id="wDel" style="display:none">삭제</button>
+      <button class="btn" id="wCancel">취소</button>
+      <button class="btn save" id="wSave">저장</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const DOW=["일","월","화","수","목","금","토"];
 const STORE="smh_schedule_v2";
@@ -453,10 +545,20 @@ const TODO_SEED=[
   {id:108,text:"필복싱짐",site:"필복싱",sub:["6M × 9M"],kind:"실측",done:false},
 ];
 
+/* ===== 작업자(인건비) 데이터 ===== */
+const WORKER_KINDS=["전기","목공","도장","철거","설비","가구","도배","바닥","기타"];
+const WORKER_STORE="smh_workers_v1";
+const WORKER_SEED=[
+  {id:201,date:todayStr_init(),time:"",worker:"김반장",site:"필복싱",kind:"전기",pay:250000,paid:"미지급",memo:"조명 배선"},
+];
+function todayStr_init(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+
 let DATA=load();
 let TODOS=loadTodos();
+let WORKERS=loadWorkers();
 let view="board";
 let cur=new Date();
+let workerView="cal"; // "cal" | "list" | "pay"
 let editId=null;
 let custQuery="";
 
@@ -466,6 +568,9 @@ function save(){localStorage.setItem(STORE,JSON.stringify(DATA));pushToSheet();}
 function loadTodos(){try{const s=localStorage.getItem(TODO_STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(TODO_STORE,JSON.stringify(TODO_SEED));return JSON.parse(JSON.stringify(TODO_SEED));}
 function saveTodos(){localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));pushTodosToSheet();}
+function loadWorkers(){try{const s=localStorage.getItem(WORKER_STORE);if(s)return JSON.parse(s);}catch(e){}
+  localStorage.setItem(WORKER_STORE,JSON.stringify(WORKER_SEED));return JSON.parse(JSON.stringify(WORKER_SEED));}
+function saveWorkers(){localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));pushWorkersToSheet();}
 
 /* ===== 구글 시트 동기화 ===== */
 const SHEET_API="https://script.google.com/macros/s/AKfycbxpVomFCLHKyph4mm9G50tPH96OTDM0IA7ZiLl_M21oxbA2BVisv6i3-3gTsN6PDzFLqA/exec";
@@ -517,6 +622,19 @@ function todoToRow(t){
     "하위메모":(t.sub||[]).join("|"),"상세":t.desc||"","메모":t.memo||"","구분":t.kind||"기타",
     "완료":t.done?"true":"false","승격여부":t.promoted?"true":"false"};
 }
+// 작업자 시트 ↔ 앱
+function rowToWorker(r){
+  let pay=r["일당"];
+  if(typeof pay==="string")pay=Number(pay.replace(/[^\d.-]/g,""))||0;
+  else pay=Number(pay)||0;
+  return {id:Number(r["작업ID"])||Date.now()+Math.random(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+    worker:String(r["작업자"]||""),site:String(r["현장"]||""),kind:String(r["구분"]||"기타"),
+    pay:pay,paid:String(r["지급여부"]||"미지급"),memo:String(r["메모"]||"")};
+}
+function workerToRow(w){
+  return {"작업ID":w.id,"날짜":w.date||"","시간":w.time||"","작업자":w.worker||"","현장":w.site||"",
+    "구분":w.kind||"기타","일당":w.pay||0,"지급여부":w.paid||"미지급","메모":w.memo||""};
+}
 
 async function syncFromSheet(){
   setSync("loading");
@@ -540,6 +658,7 @@ async function syncFromSheet(){
       }
     }
     if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
+    if(j.작업자){WORKERS=j.작업자.map(rowToWorker);localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));}
     setSync("ok");render();
   }catch(err){setSync("error");}
 }
@@ -570,7 +689,17 @@ function pushTodosToSheet(){
   },800);
 }
 
-let sitesPushTimer=null;
+let workersPushTimer=null;
+function pushWorkersToSheet(){
+  if(workersPushTimer)clearTimeout(workersPushTimer);
+  workersPushTimer=setTimeout(async()=>{
+    try{
+      await fetch(SHEET_API,{method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({sheet:"작업자",action:"replaceAll",rows:WORKERS.map(workerToRow)})});
+    }catch(err){/* 로컬 저장됨, 무시 */}
+  },800);
+}
 function pushSitesToSheet(){
   if(sitesPushTimer)clearTimeout(sitesPushTimer);
   sitesPushTimer=setTimeout(async()=>{
@@ -600,12 +729,14 @@ function render(){
   else if(view==="today")renderToday();
   else if(view==="todo")renderTodo();
   else if(view==="month")renderMonth();
+  else if(view==="worker")renderWorker();
   else renderCust();
   document.getElementById("bottomhint").textContent =
     view==="cust"?"검색하거나, 상세 일정 보기를 눌러 관련 일정을 펼칠 수 있어요":
     view==="board"?"날짜 칸을 누르면 그날 일정 추가 · 일정을 누르면 수정":
     view==="today"?"체크 버튼으로 바로 완료 처리할 수 있어요":
     view==="todo"?"체크하면 완료 · 날짜 잡기를 누르면 일정(달력)으로 올라갑니다":
+    view==="worker"?"날짜를 누르면 작업 추가 · 일정과 별개로 관리됩니다":
     "날짜를 누르면 일정 추가 · 일정을 누르면 수정";
 }
 
@@ -765,6 +896,126 @@ function renderMonth(){
       cur.setMonth(cur.getMonth()+(dx<0?1:-1));render();
     }
   });
+}
+
+/* ===== 작업자(인건비) ===== */
+function wkOf(ds){return WORKERS.filter(w=>w.date===ds).sort(byTime);}
+function fmtWon(n){n=Number(n)||0;return n.toLocaleString("ko-KR");}
+function renderWorker(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  // 월 합계 (현재 보고 있는 달 기준)
+  const mPrefix=y+"-"+String(m+1).padStart(2,"0");
+  const monthRows=WORKERS.filter(w=>w.date&&w.date.startsWith(mPrefix));
+  let total=0,paid=0;const days=new Set();
+  monthRows.forEach(w=>{const p=Number(w.pay)||0;total+=p;if(w.paid==="지급완료")paid+=p;if(w.date)days.add(w.date);});
+  const unpaid=total-paid;
+
+  let html=`<div class="nav"><div class="range">${y}년 ${m+1}월</div>
+    <div class="arrows"><button class="btn today" data-go="today">오늘</button>
+    <button class="btn" data-go="prev">‹</button><button class="btn" data-go="next">›</button></div></div>`;
+  html+=`<div class="vtoggle">
+    <button data-wview="cal" class="${workerView==='cal'?'on':''}">📅 달력</button>
+    <button data-wview="list" class="${workerView==='list'?'on':''}">📋 리스트</button>
+    <button data-wview="pay" class="${workerView==='pay'?'on':''}">💰 지급</button></div>`;
+
+  if(workerView==="pay"){
+    html+=`<div class="sum-bar">
+      <div class="sum-card"><div class="sl">총 인건비</div><div class="sv">${fmtWon(total)}</div></div>
+      <div class="sum-card unpaid"><div class="sl">미지급</div><div class="sv">${fmtWon(unpaid)}</div></div>
+      <div class="sum-card paid"><div class="sl">지급완료</div><div class="sv">${fmtWon(paid)}</div></div>
+      <div class="sum-card"><div class="sl">작업일</div><div class="sv">${days.size}일</div></div>
+    </div>`;
+    html+=workerPayHTML(monthRows);
+  }else if(workerView==="cal"){
+    html+=workerCalHTML(y,m);
+  }else{
+    html+=workerListHTML(monthRows);
+  }
+  V.innerHTML=html;
+  if(workerView==="cal"){
+    const cal=document.getElementById("workerCal");
+    if(cal){
+      let _tx=0,_ty=0;
+      cal.addEventListener("touchstart",e=>{_tx=e.touches[0].clientX;_ty=e.touches[0].clientY;},{passive:true});
+      cal.addEventListener("touchend",e=>{
+        const dx=e.changedTouches[0].clientX-_tx,dy=e.changedTouches[0].clientY-_ty;
+        if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>55){cur.setMonth(cur.getMonth()+(dx<0?1:-1));render();}
+      });
+    }
+  }
+}
+function workerCalHTML(y,m){
+  const first=new Date(y,m,1),start=new Date(first);
+  start.setDate(1-first.getDay());
+  let cells="";
+  for(let i=0;i<42;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const ds=fmt(d),other=d.getMonth()!==m,isT=ds===todayStr();
+    const ws=wkOf(ds);
+    let cls="daynum"+(d.getDay()===0?" sun":d.getDay()===6?" sat":"");
+    let inner=`<div class="${cls}">${d.getDate()}</div>`;
+    const MAX=3;
+    ws.slice(0,MAX).forEach(w=>{
+      const pd=w.paid==="지급완료"?"done":"";
+      inner+=`<div class="ev wk-${w.kind} ${pd}" data-wid="${w.id}">${w.worker||w.kind}</div>`;
+    });
+    if(ws.length>MAX)inner+=`<div class="ev-more" data-wday="${ds}">+${ws.length-MAX}명</div>`;
+    cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-wdate="${ds}">${inner}</div>`;
+  }
+  return `<div class="cal" id="workerCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
+    <div class="grid">${cells}</div></div>`;
+}
+function workerListHTML(rows){
+  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
+  // 날짜 내림차순 그룹 — 금액/지급 정보 없이 가볍게 보기
+  const byDay={};
+  rows.forEach(w=>{(byDay[w.date]=byDay[w.date]||[]).push(w);});
+  const dates=Object.keys(byDay).sort((a,b)=>a<b?1:-1);
+  let html="";
+  dates.forEach(ds=>{
+    const list=byDay[ds].sort(byTime);
+    const d=new Date(ds+"T00:00");
+    html+=`<div class="wk-day">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]}) · ${list.length}명</div>`;
+    list.forEach(w=>{
+      const isPaid=w.paid==="지급완료";
+      html+=`<div class="wk-row ${isPaid?'paid':''}" data-wid="${w.id}">
+        <div class="wk-main">
+          <div class="wk-name">${w.worker||"(이름없음)"} <span class="tag wk wk-${w.kind}">${w.kind}</span></div>
+          <div class="wk-meta">${w.site?w.site:"현장 미정"}${w.time?" · "+w.time:""}${w.memo?" · "+w.memo:""}</div>
+        </div>
+      </div>`;
+    });
+  });
+  return html;
+}
+function workerPayHTML(rows){
+  if(!rows.length)return `<div class="empty">이 달 작업 기록이 없습니다</div>`;
+  // 날짜 내림차순 그룹 — 금액 + 지급여부 토글 포함
+  const byDay={};
+  rows.forEach(w=>{(byDay[w.date]=byDay[w.date]||[]).push(w);});
+  const dates=Object.keys(byDay).sort((a,b)=>a<b?1:-1);
+  let html="";
+  dates.forEach(ds=>{
+    const list=byDay[ds].sort(byTime);
+    const d=new Date(ds+"T00:00");
+    const daySum=list.reduce((s,w)=>s+(Number(w.pay)||0),0);
+    html+=`<div class="wk-day">${d.getMonth()+1}/${d.getDate()} (${DOW[d.getDay()]}) · ${list.length}명
+      <span class="wk-day-sum">${fmtWon(daySum)}원</span></div>`;
+    list.forEach(w=>{
+      const isPaid=w.paid==="지급완료";
+      html+=`<div class="wk-row ${isPaid?'paid':''}" data-wid="${w.id}">
+        <div class="wk-main">
+          <div class="wk-name">${w.worker||"(이름없음)"} <span class="tag wk wk-${w.kind}">${w.kind}</span></div>
+          <div class="wk-meta">${w.site?w.site:"현장 미정"}${w.time?" · "+w.time:""}${w.memo?" · "+w.memo:""}</div>
+        </div>
+        <div class="wk-right">
+          <div class="wk-pay">${fmtWon(w.pay)}원</div>
+          <button class="wk-paybtn ${isPaid?'is-paid':''}" data-wpaid="${w.id}">${isPaid?"✓ 지급완료":"미지급"}</button>
+        </div>
+      </div>`;
+    });
+  });
+  return html;
 }
 
 /* ===== 현장별 ===== */
@@ -982,6 +1233,19 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   if(view!=="todo"){pasteOpen=false;pastePreview=null;}render();});
 
 V.addEventListener("click",e=>{
+  // ----- 작업자 -----
+  const wv=e.target.closest("[data-wview]");
+  if(wv){workerView=wv.dataset.wview;render();return;}
+  const wpaid=e.target.closest("[data-wpaid]");
+  if(wpaid){e.stopPropagation();const id=Number(wpaid.dataset.wpaid);
+    const w=WORKERS.find(x=>x.id===id);if(w){w.paid=w.paid==="지급완료"?"미지급":"지급완료";saveWorkers();render();}return;}
+  const wmore=e.target.closest("[data-wday]");
+  if(wmore){openWorkerDay(wmore.dataset.wday);return;}
+  const wid=e.target.closest("[data-wid]");
+  if(wid){openWorkerModal(Number(wid.dataset.wid));return;}
+  const wcell=e.target.closest("[data-wdate]");
+  if(wcell){const inEv=e.target.closest(".ev");if(!inEv){openWorkerModal(null,wcell.dataset.wdate);return;}}
+
   // ----- 할 일 -----
   const tdel=e.target.closest("[data-tdel]");
   if(tdel){if(!confirm("할 일을 삭제할까요?"))return;TODOS=TODOS.filter(x=>x.id!==Number(tdel.dataset.tdel));saveTodos();render();return;}
@@ -1022,7 +1286,7 @@ V.addEventListener("click",e=>{
   const go=e.target.closest("[data-go]");
   if(go){const g=go.dataset.go;
     if(g==="today")cur=new Date();
-    else if(view==="month")cur.setMonth(cur.getMonth()+(g==="next"?1:-1));
+    else if(view==="month"||view==="worker")cur.setMonth(cur.getMonth()+(g==="next"?1:-1));
     else cur.setDate(cur.getDate()+(g==="next"?14:-14));
     render();return;}
   if(e.target.closest("#addTop")){openModal(null);return;}
@@ -1147,6 +1411,8 @@ function openDay(ds){
 document.getElementById("dayClose").onclick=()=>dayov.classList.remove("show");
 dayov.onclick=e=>{if(e.target===dayov)dayov.classList.remove("show");};
 document.getElementById("dayList").addEventListener("click",e=>{
+  const wr=e.target.closest("[data-wid]");
+  if(wr){dayov.classList.remove("show");openWorkerModal(Number(wr.dataset.wid));return;}
   const r=e.target.closest(".dl-row");if(!r)return;
   dayov.classList.remove("show");openDetail(Number(r.dataset.id));});
 function openDetail(id){
@@ -1262,7 +1528,7 @@ function openModal(id,presetDate,presetWeek){
   initSiteAc();
 }
 function closeModal(){ov.classList.remove("show");}
-document.getElementById("addBtn").onclick=()=>openModal(null);
+document.getElementById("addBtn").onclick=()=>{if(view==="worker")openWorkerModal(null);else openModal(null);};
 document.getElementById("cancelBtn").onclick=()=>{promoteTodoId=null;closeModal();};
 // ov.onclick=e=>{if(e.target===ov)closeModal();}; // 바깥 클릭 시 닫기 비활성화
 document.getElementById("saveBtn").onclick=()=>{
@@ -1285,6 +1551,99 @@ document.getElementById("delBtn").onclick=()=>{
   if(!confirm("이 일정을 삭제할까요?"))return;
   DATA=DATA.filter(x=>x.id!==editId);save();closeModal();render();
 };
+
+/* ===== 작업자 모달 ===== */
+const wov=document.getElementById("wov");
+let wEditId=null;
+let wCurKind="전기";
+let wCurPaid="미지급";
+document.getElementById("wKindChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  document.querySelectorAll("#wKindChips .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on");wCurKind=c.dataset.k;});
+document.getElementById("wPaidChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  document.querySelectorAll("#wPaidChips .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on");wCurPaid=c.dataset.p;});
+function setWKind(k){wCurKind=k;document.querySelectorAll("#wKindChips .chip").forEach(x=>x.classList.toggle("on",x.dataset.k===k));}
+function setWPaid(p){wCurPaid=p;document.querySelectorAll("#wPaidChips .chip").forEach(x=>x.classList.toggle("on",x.dataset.p===p));}
+function getWorkerNames(){
+  const s=new Set();WORKERS.forEach(w=>{if(w.worker)s.add(w.worker);});return [...s].sort();
+}
+function initWorkerAc(){
+  const inp=document.getElementById("wWorker");
+  const list=document.getElementById("workerAcList");
+  if(!inp||!list)return;
+  function showAc(){
+    const q=inp.value.replace(/\s+/g,"").toLowerCase();
+    const names=getWorkerNames();
+    const matches=q?names.filter(n=>n.replace(/\s+/g,"").toLowerCase().includes(q)):names;
+    if(!matches.length){list.classList.remove("open");return;}
+    list.innerHTML=matches.map(n=>`<div class="site-ac-item">${n}</div>`).join("");
+    list.classList.add("open");
+    list.querySelectorAll(".site-ac-item").forEach(item=>{
+      item.addEventListener("mousedown",ev=>{ev.preventDefault();inp.value=item.textContent;list.classList.remove("open");});
+      item.addEventListener("touchend",ev=>{ev.preventDefault();inp.value=item.textContent;list.classList.remove("open");inp.blur();});
+    });
+  }
+  inp.addEventListener("input",showAc);
+  inp.addEventListener("focus",showAc);
+  inp.addEventListener("blur",()=>setTimeout(()=>list.classList.remove("open"),150));
+}
+function openWorkerModal(id,presetDate){
+  wEditId=id;
+  const g=x=>document.getElementById(x);
+  if(id){const w=WORKERS.find(x=>x.id===id);if(!w)return;
+    g("wTitle").textContent="작업 수정";
+    g("wDate").value=w.date||"";g("wTime").value=w.time||"";g("wWorker").value=w.worker||"";
+    g("wSite").value=w.site||"";g("wPay").value=w.pay||"";g("wMemo").value=w.memo||"";
+    setWKind(w.kind||"전기");setWPaid(w.paid||"미지급");g("wDel").style.display="block";
+  }else{
+    g("wTitle").textContent="작업 추가";
+    g("wDate").value=presetDate||todayStr();g("wTime").value="";g("wWorker").value="";
+    g("wSite").value="";g("wPay").value="";g("wMemo").value="";
+    setWKind("전기");setWPaid("미지급");g("wDel").style.display="none";
+  }
+  wov.classList.add("show");
+  initWorkerAc();
+}
+function closeWorkerModal(){wov.classList.remove("show");}
+document.getElementById("wCancel").onclick=closeWorkerModal;
+document.getElementById("wSave").onclick=()=>{
+  const g=x=>document.getElementById(x).value;
+  const date=g("wDate").trim();
+  const worker=g("wWorker").trim();
+  if(!date){alert("날짜를 입력해 주세요");return;}
+  if(!worker){alert("작업자 이름을 입력해 주세요");return;}
+  const payNum=Number(String(g("wPay")).replace(/[^\d.-]/g,""))||0;
+  const rec={date:date,time:g("wTime"),worker:worker,site:g("wSite").trim(),
+    kind:wCurKind,pay:payNum,paid:wCurPaid,memo:g("wMemo").trim()};
+  if(wEditId){const ex=WORKERS.find(x=>x.id===wEditId);Object.assign(ex,rec);}
+  else{rec.id=Date.now();WORKERS.push(rec);}
+  saveWorkers();closeWorkerModal();render();
+};
+document.getElementById("wDel").onclick=()=>{
+  if(!confirm("이 작업 기록을 삭제할까요?"))return;
+  WORKERS=WORKERS.filter(x=>x.id!==wEditId);saveWorkers();closeWorkerModal();render();
+};
+// 작업자 일별 보기 (달력에서 +N명 클릭 시) — 기존 dayov 재사용
+function openWorkerDay(ds){
+  const list=wkOf(ds);
+  const d=new Date(ds+"T00:00");
+  document.getElementById("dayTitle").textContent=`${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]}) 작업자`;
+  let html="";
+  list.forEach(w=>{
+    const isPaid=w.paid==="지급완료";
+    html+=`<div class="dl-row ${isPaid?'done':''}" data-wid="${w.id}">
+      <div class="dl-time ${w.time?'':'none'}">${w.time||"종일"}</div>
+      <div class="dl-body"><div class="dl-site">${w.worker||"(이름없음)"} · ${fmtWon(w.pay)}원</div>
+      <div class="dl-desc">${w.site||"현장 미정"}${w.memo?" · "+w.memo:""}</div>
+      <span class="tag wk wk-${w.kind}" style="margin-top:5px;display:inline-block">${w.kind}</span></div></div>`;
+  });
+  document.getElementById("dayList").innerHTML=html;
+  dayov.classList.add("show");
+  dayov.dataset.mode="worker";
+}
 
 render();
 syncFromSheet();
