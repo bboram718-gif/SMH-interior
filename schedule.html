@@ -599,6 +599,35 @@ const SITE_INFO={
   "원복철거":{customer:"탑부동산",note:"솔밭공원 옆 970평 철거 (지하~4층, 이마트 제외 전체)\n스프링쿨러·소방 기본배선 남기고 철거\n메인 분전반 제외 전체 철거\nB1~2층 엘베 유지 / 지하 펌프실·기계실 유지\n외부 CCTV·이마트 설비 피해 최소화 / 바닥 전부 철거"},
 };
 
+const SITE_STORE="smh_sites_v1";
+const SITE_DIRTY_STORE="smh_sites_dirty_v1";
+function replaceSiteInfo(obj){
+  Object.keys(SITE_INFO).forEach(k=>delete SITE_INFO[k]);
+  Object.entries(obj||{}).forEach(([name,info])=>{
+    if(!name)return;
+    SITE_INFO[name]={customer:info?.customer||"",note:info?.note||"",hidden:!!info?.hidden};
+  });
+}
+function saveSitesLocal(){
+  localStorage.setItem(SITE_STORE,JSON.stringify(SITE_INFO));
+}
+function loadSites(){
+  try{
+    const s=localStorage.getItem(SITE_STORE);
+    if(s){replaceSiteInfo(JSON.parse(s));return;}
+  }catch(e){}
+  saveSitesLocal();
+}
+function markSitesDirty(){localStorage.setItem(SITE_DIRTY_STORE,"1");}
+function clearSitesDirty(){localStorage.removeItem(SITE_DIRTY_STORE);}
+function sitesDirty(){return localStorage.getItem(SITE_DIRTY_STORE)==="1";}
+function saveSites(){
+  saveSitesLocal();
+  markSitesDirty();
+  pushSitesToSheet();
+}
+loadSites();
+
 const TODO_STORE="smh_todos_v1";
 const TODO_SEED=[
   {id:101,text:"EK이종환 이사님 요청사항 전달",site:"EK이종환",sub:["계단 제작 요청"],kind:"기타",done:false},
@@ -623,6 +652,23 @@ function todayStr_init(){const d=new Date();return d.getFullYear()+"-"+String(d.
 let DATA=load();
 let TODOS=loadTodos();
 let WORKERS=loadWorkers();
+
+const DIRTY_EVENTS="smh_dirty_events_v1";
+const DIRTY_TODOS="smh_dirty_todos_v1";
+const DIRTY_WORKERS="smh_dirty_workers_v1";
+const DEL_EVENTS="smh_deleted_events_v1";
+const DEL_TODOS="smh_deleted_todos_v1";
+const DEL_WORKERS="smh_deleted_workers_v1";
+function markDirty(key){localStorage.setItem(key,"1");}
+function clearDirty(key){localStorage.removeItem(key);}
+function isDirty(key){return localStorage.getItem(key)==="1";}
+function readIdSet(key){
+  try{return new Set(JSON.parse(localStorage.getItem(key)||"[]").map(String));}
+  catch(e){return new Set();}
+}
+function writeIdSet(key,set){localStorage.setItem(key,JSON.stringify([...set]));}
+function markDeleted(key,id){const s=readIdSet(key);s.add(String(id));writeIdSet(key,s);}
+function notDeleted(key,item){return !readIdSet(key).has(String(item.id));}
 let view="schedule";
 let scheduleView="board"; // "today" | "board" | "month" — 일정 탭 내부 기간 토글
 let cur=new Date();
@@ -632,19 +678,59 @@ let custQuery="";
 
 function load(){try{const s=localStorage.getItem(STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(STORE,JSON.stringify(SEED));return JSON.parse(JSON.stringify(SEED));}
-function save(){localStorage.setItem(STORE,JSON.stringify(DATA));pushToSheet();}
+function save(){localStorage.setItem(STORE,JSON.stringify(DATA));markDirty(DIRTY_EVENTS);pushToSheet();}
 function loadTodos(){try{const s=localStorage.getItem(TODO_STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(TODO_STORE,JSON.stringify(TODO_SEED));return JSON.parse(JSON.stringify(TODO_SEED));}
-function saveTodos(){localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));pushTodosToSheet();}
+function saveTodos(){localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));markDirty(DIRTY_TODOS);pushTodosToSheet();}
 function loadWorkers(){try{const s=localStorage.getItem(WORKER_STORE);if(s)return JSON.parse(s);}catch(e){}
   localStorage.setItem(WORKER_STORE,JSON.stringify(WORKER_SEED));return JSON.parse(JSON.stringify(WORKER_SEED));}
-function saveWorkers(){localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));pushWorkersToSheet();}
+function saveWorkers(){localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));markDirty(DIRTY_WORKERS);pushWorkersToSheet();}
 
 /* ===== 구글 시트 동기화 ===== */
 const SHEET_API="https://script.google.com/macros/s/AKfycbxpVomFCLHKyph4mm9G50tPH96OTDM0IA7ZiLl_M21oxbA2BVisv6i3-3gTsN6PDzFLqA/exec";
 let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
+
+async function fetchSheetJson(){
+  const res=await fetch(SHEET_API,{cache:"no-store"});
+  return await res.json();
+}
+async function postSheetRows(sheet,rows){
+  await fetch(SHEET_API,{method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({sheet:sheet,action:"replaceAll",rows:rows})});
+}
+async function mergedRowsFor(sheet,localItems,rowToObj,objToRow,deletedKey){
+  try{
+    const j=await fetchSheetJson();
+    const remoteRows=Array.isArray(j?.[sheet])?j[sheet]:[];
+    const deleted=readIdSet(deletedKey);
+    const map=new Map();
+    remoteRows.map(rowToObj).forEach(obj=>{
+      if(obj&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
+    });
+    (localItems||[]).forEach(obj=>{
+      if(obj&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
+    });
+    return [...map.values()].map(objToRow);
+  }catch(e){
+    return (localItems||[]).filter(obj=>notDeleted(deletedKey,obj)).map(objToRow);
+  }
+}
+async function mergedSiteRows(){
+  try{
+    const j=await fetchSheetJson();
+    const map=new Map();
+    if(Array.isArray(j?.현장)){
+      j.현장.map(rowToSite).forEach(s=>{if(s.name)map.set(s.name,siteToRow(s.name,s));});
+    }
+    Object.entries(SITE_INFO).forEach(([name,info])=>map.set(name,siteToRow(name,info)));
+    return [...map.values()];
+  }catch(e){
+    return Object.entries(SITE_INFO).map(([name,info])=>siteToRow(name,info));
+  }
+}
 
 // 시트 날짜/시간 → 로컬 변환 (getHours/getDate 사용: 브라우저 로컬타임 = KST)
 function normDate(v){
@@ -709,24 +795,38 @@ async function syncFromSheet(){
   try{
     const res=await fetch(SHEET_API);
     const j=await res.json();
-    if(j.일정){DATA=j.일정.map(rowToEvent);localStorage.setItem(STORE,JSON.stringify(DATA));}
+    if(j.일정&&!isDirty(DIRTY_EVENTS)){
+      DATA=j.일정.map(rowToEvent).filter(x=>notDeleted(DEL_EVENTS,x));
+      localStorage.setItem(STORE,JSON.stringify(DATA));
+    }else if(isDirty(DIRTY_EVENTS)){pushToSheet();}
     if(Array.isArray(j.현장)){
-      // 시트 데이터로 완전히 교체 (기존 키 전부 삭제 후 재구성)
-      Object.keys(SITE_INFO).forEach(k=>delete SITE_INFO[k]);
-      j.현장.forEach(r=>{
-        const s=rowToSite(r);if(!s.name)return;
-        SITE_INFO[s.name]={customer:s.customer,note:s.note||"",hidden:s.hidden||false};
-      });
-      // SITE_ORDER도 시트에 없는 현장은 제거
-      const savedOrder=loadSiteOrder();
-      if(savedOrder){
-        const validNames=new Set(Object.keys(SITE_INFO));
-        const filtered=savedOrder.filter(n=>validNames.has(n));
-        saveSiteOrder(filtered);
+      if(sitesDirty()){
+        pushSitesToSheet();
+      }else{
+        const next={};
+        j.현장.forEach(r=>{
+          const s=rowToSite(r);if(!s.name)return;
+          next[s.name]={customer:s.customer,note:s.note||"",hidden:s.hidden||false};
+        });
+        replaceSiteInfo(next);
+        saveSitesLocal();
+        // SITE_ORDER도 시트에 없는 현장은 제거
+        const savedOrder=loadSiteOrder();
+        if(savedOrder){
+          const validNames=new Set(Object.keys(SITE_INFO));
+          const filtered=savedOrder.filter(n=>validNames.has(n));
+          saveSiteOrder(filtered);
+        }
       }
     }
-    if(j.할일){TODOS=j.할일.map(rowToTodo);localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));}
-    if(j.작업자){WORKERS=j.작업자.map(rowToWorker);localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));}
+    if(j.할일&&!isDirty(DIRTY_TODOS)){
+      TODOS=j.할일.map(rowToTodo).filter(x=>notDeleted(DEL_TODOS,x));
+      localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));
+    }else if(isDirty(DIRTY_TODOS)){pushTodosToSheet();}
+    if(j.작업자&&!isDirty(DIRTY_WORKERS)){
+      WORKERS=j.작업자.map(rowToWorker).filter(x=>notDeleted(DEL_WORKERS,x));
+      localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));
+    }else if(isDirty(DIRTY_WORKERS)){pushWorkersToSheet();}
     setSync("ok");render();
   }catch(err){setSync("error");}
 }
@@ -737,9 +837,9 @@ function pushToSheet(){
   pushTimer=setTimeout(async()=>{
     setSync("saving");
     try{
-      await fetch(SHEET_API,{method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({sheet:"일정",action:"replaceAll",rows:DATA.map(eventToRow)})});
+      const rows=await mergedRowsFor("일정",DATA,rowToEvent,eventToRow,DEL_EVENTS);
+      await postSheetRows("일정",rows);
+      clearDirty(DIRTY_EVENTS);
       setSync("ok");
     }catch(err){setSync("error");}
   },800);
@@ -750,10 +850,10 @@ function pushTodosToSheet(){
   if(todosPushTimer)clearTimeout(todosPushTimer);
   todosPushTimer=setTimeout(async()=>{
     try{
-      await fetch(SHEET_API,{method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({sheet:"할일",action:"replaceAll",rows:TODOS.map(todoToRow)})});
-    }catch(err){/* 로컬 저장됨, 무시 */}
+      const rows=await mergedRowsFor("할일",TODOS,rowToTodo,todoToRow,DEL_TODOS);
+      await postSheetRows("할일",rows);
+      clearDirty(DIRTY_TODOS);
+    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
   },800);
 }
 
@@ -762,10 +862,10 @@ function pushWorkersToSheet(){
   if(workersPushTimer)clearTimeout(workersPushTimer);
   workersPushTimer=setTimeout(async()=>{
     try{
-      await fetch(SHEET_API,{method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({sheet:"작업자",action:"replaceAll",rows:WORKERS.map(workerToRow)})});
-    }catch(err){/* 로컬 저장됨, 무시 */}
+      const rows=await mergedRowsFor("작업자",WORKERS,rowToWorker,workerToRow,DEL_WORKERS);
+      await postSheetRows("작업자",rows);
+      clearDirty(DIRTY_WORKERS);
+    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
   },800);
 }
 let sitesPushTimer=null;
@@ -773,18 +873,17 @@ function pushSitesToSheet(){
   if(sitesPushTimer)clearTimeout(sitesPushTimer);
   sitesPushTimer=setTimeout(async()=>{
     try{
-      const rows=Object.entries(SITE_INFO).map(([name,info])=>siteToRow(name,info));
-      await fetch(SHEET_API,{method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify({sheet:"현장",action:"replaceAll",rows})});
-    }catch(err){/* 무시 */}
+      const rows=await mergedSiteRows();
+      await postSheetRows("현장",rows);
+      clearSitesDirty();
+    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
   },800);
 }
 function saveNote(el){
   const name=el.dataset.site;
-  if(!SITE_INFO[name])SITE_INFO[name]={note:""};
+  if(!SITE_INFO[name])SITE_INFO[name]={customer:"",note:"",hidden:false};
   SITE_INFO[name].note=el.value;
-  pushSitesToSheet();
+  saveSites();
 }
 function fmt(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function todayStr(){return fmt(new Date());}
@@ -1390,7 +1489,7 @@ V.addEventListener("click",e=>{
 
   // ----- 할 일 -----
   const tdel=e.target.closest("[data-tdel]");
-  if(tdel){if(!confirm("할 일을 삭제할까요?"))return;TODOS=TODOS.filter(x=>x.id!==Number(tdel.dataset.tdel));saveTodos();render();return;}
+  if(tdel){if(!confirm("할 일을 삭제할까요?"))return;const id=Number(tdel.dataset.tdel);markDeleted(DEL_TODOS,id);TODOS=TODOS.filter(x=>x.id!==id);saveTodos();render();return;}
   const tcheck=e.target.closest("[data-todocheck]");
   if(tcheck){const id=Number(tcheck.dataset.todocheck);const t=TODOS.find(x=>x.id===id);
     t.done=!t.done;saveTodos();render();return;}
@@ -1404,7 +1503,7 @@ V.addEventListener("click",e=>{
     const weekKey=wkKey(new Date());
     DATA.push({id:uid(),date:"",week:weekKey,time:"",site:t.site||t.text,
       desc:t.site?t.text:"",kind:t.kind||"기타",status:"예정",memo:t.sub?t.sub.join(" / "):""});
-    TODOS=TODOS.filter(x=>x.id!==id);save();saveTodos();render();return;
+    markDeleted(DEL_TODOS,id);TODOS=TODOS.filter(x=>x.id!==id);save();saveTodos();render();return;
   }
   if(e.target.closest("#pasteToggle")){
     const ta=document.getElementById("pasteArea");
@@ -1448,7 +1547,7 @@ V.addEventListener("click",e=>{
       kind:ev.kind||"기타",done:false,promoted:false,
       sub:ev.memo?[ev.memo]:[],order:TODOS.length};
     TODOS.push(t);saveTodos();
-    DATA=DATA.filter(x=>x.id!==id);save();render();return;
+    markDeleted(DEL_EVENTS,id);DATA=DATA.filter(x=>x.id!==id);save();render();return;
   }
   const mv=e.target.closest(".site-move");
   if(mv){e.stopPropagation();moveSite(mv.dataset.site,mv.dataset.dir);return;}
@@ -1456,9 +1555,9 @@ V.addEventListener("click",e=>{
   if(sh){e.stopPropagation();
     const name=sh.dataset.site;
     if(!confirm(`"${name}" 현장을 숨길까요?\n앱에서는 안 보이고 시트에서는 확인할 수 있어요.`))return;
-    if(!SITE_INFO[name])SITE_INFO[name]={note:""};
+    if(!SITE_INFO[name])SITE_INFO[name]={customer:"",note:"",hidden:false};
     SITE_INFO[name].hidden=true;
-    pushSitesToSheet();render();return;
+    saveSites();render();return;
   }
   const ch=e.target.closest(".cust-header");
   if(ch){const name=ch.dataset.cust;const card=document.getElementById("cust-"+cssid(name));
@@ -1516,7 +1615,7 @@ function openTodoDetail(id){
 }
 function closeTodoDetail(){tov.classList.remove("show");}
 document.getElementById("tvClose").onclick=closeTodoDetail;
-tov.onclick=e=>{if(e.target===tov)closeTodoDetail();};
+// tov.onclick=e=>{if(e.target===tov)closeTodoDetail();}; // 입력 모달은 바깥 터치로 닫히지 않게 고정
 document.getElementById("tvKindChips").querySelectorAll(".chip").forEach(c=>{
   c.onclick=()=>{document.getElementById("tvKindChips").querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");};
 });
@@ -1531,7 +1630,7 @@ document.getElementById("tvSave").onclick=()=>{
   saveTodos();closeTodoDetail();render();};
 document.getElementById("tvDel").onclick=()=>{
   if(!confirm("이 할 일을 삭제할까요?"))return;
-  TODOS=TODOS.filter(x=>x.id!==todoDetailId);saveTodos();closeTodoDetail();render();};
+  markDeleted(DEL_TODOS,todoDetailId);TODOS=TODOS.filter(x=>x.id!==todoDetailId);saveTodos();closeTodoDetail();render();};
 document.getElementById("tvSchedule").onclick=()=>{
   const id=todoDetailId;closeTodoDetail();promoteTodo(id);};
 function openDay(ds){
@@ -1592,7 +1691,7 @@ document.getElementById("dvDone").onclick=()=>{
   ev.status=ev.status==="완료"?"예정":"완료";save();closeDetail();render();};
 document.getElementById("dvDel").onclick=()=>{
   if(!confirm("이 일정을 삭제할까요?"))return;
-  DATA=DATA.filter(x=>x.id!==detailId);save();closeDetail();render();};
+  markDeleted(DEL_EVENTS,detailId);DATA=DATA.filter(x=>x.id!==detailId);save();closeDetail();render();};
 document.getElementById("dvSetDate").onclick=()=>{closeDetail();openModal(detailId);};
 document.getElementById("dvToTodo").onclick=()=>{
   if(!confirm("할일 탭으로 이동할까요?"))return;
@@ -1601,7 +1700,7 @@ document.getElementById("dvToTodo").onclick=()=>{
     kind:ev.kind||"기타",done:false,promoted:false,
     sub:ev.memo?[ev.memo]:[],order:TODOS.length};
   TODOS.push(t);saveTodos();
-  DATA=DATA.filter(x=>x.id!==detailId);save();
+  markDeleted(DEL_EVENTS,detailId);DATA=DATA.filter(x=>x.id!==detailId);save();
   closeDetail();render();
   alert("할일 탭으로 이동했습니다");
 };
@@ -1622,6 +1721,8 @@ function initSiteAc(){
   const inp=document.getElementById("fSite");
   const list=document.getElementById("siteAcList");
   if(!inp||!list)return;
+  if(inp.dataset.acInitialized==="true")return;
+  inp.dataset.acInitialized="true";
   function showAc(){
     const q=inp.value.replace(/\s+/g,"").toLowerCase();
     const names=getSiteNames();
@@ -1692,7 +1793,7 @@ document.getElementById("saveBtn").onclick=()=>{
 };
 document.getElementById("delBtn").onclick=()=>{
   if(!confirm("이 일정을 삭제할까요?"))return;
-  DATA=DATA.filter(x=>x.id!==editId);save();closeModal();render();
+  markDeleted(DEL_EVENTS,editId);DATA=DATA.filter(x=>x.id!==editId);save();closeModal();render();
 };
 
 /* ===== 작업자 모달 ===== */
@@ -1717,6 +1818,8 @@ function initWorkerAc(){
   const inp=document.getElementById("wWorker");
   const list=document.getElementById("workerAcList");
   if(!inp||!list)return;
+  if(inp.dataset.acInitialized==="true")return;
+  inp.dataset.acInitialized="true";
   function showAc(){
     const q=inp.value.replace(/\s+/g,"").toLowerCase();
     const names=getWorkerNames();
@@ -1747,6 +1850,8 @@ function initWorkerSiteAc(){
   const inp=document.getElementById("wSite");
   const list=document.getElementById("wSiteAcList");
   if(!inp||!list)return;
+  if(inp.dataset.acInitialized==="true")return;
+  inp.dataset.acInitialized="true";
   function showAc(){
     const q=inp.value.replace(/\s+/g,"").toLowerCase();
     const names=getSiteNames();
@@ -1798,7 +1903,7 @@ document.getElementById("wSave").onclick=()=>{
 };
 document.getElementById("wDel").onclick=()=>{
   if(!confirm("이 작업 기록을 삭제할까요?"))return;
-  WORKERS=WORKERS.filter(x=>x.id!==wEditId);saveWorkers();closeWorkerModal();render();
+  markDeleted(DEL_WORKERS,wEditId);WORKERS=WORKERS.filter(x=>x.id!==wEditId);saveWorkers();closeWorkerModal();render();
 };
 // 작업자 일별 보기 (달력에서 +N명 클릭 시) — 기존 dayov 재사용
 function openWorkerDay(ds){
@@ -1832,12 +1937,19 @@ function openWorkerMemoModal(id){
 }
 function closeWorkerMemoModal(){wmov.classList.remove("show");}
 document.getElementById("wmemoCancel").onclick=closeWorkerMemoModal;
-wmov.onclick=e=>{if(e.target===wmov)closeWorkerMemoModal();};
+// wmov.onclick=e=>{if(e.target===wmov)closeWorkerMemoModal();}; // 메모 수정 모달은 바깥 터치로 닫히지 않게 고정
 document.getElementById("wmemoSave").onclick=()=>{
   const w=WORKERS.find(x=>x.id===wMemoEditId);if(!w)return;
   w.memo=document.getElementById("wmemoText").value.trim();
   saveWorkers();closeWorkerMemoModal();wkListExpand[w.id]=true;render();
 };
+
+window.addEventListener("beforeunload",e=>{
+  if(syncState==="saving"||isDirty(DIRTY_EVENTS)||isDirty(DIRTY_TODOS)||isDirty(DIRTY_WORKERS)||sitesDirty()){
+    e.preventDefault();
+    e.returnValue="";
+  }
+});
 
 render();
 syncFromSheet();
