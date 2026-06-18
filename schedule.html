@@ -257,19 +257,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .dv-v.done{color:var(--teal);font-weight:600}
 
 /* day list */
-.dl-row{display:flex;gap:11px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.dl-row{display:flex;gap:11px;align-items:center;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
 .dl-row:first-child{border-top:none}
 .dl-row:hover{opacity:.7}
-.dl-time{font-size:14px;font-weight:600;min-width:48px;color:var(--ink)}
-.dl-time.none{color:var(--ink3);font-weight:400}
+.dl-time{font-size:14px;font-weight:600;min-width:46px;color:var(--ink);flex-shrink:0}
+.dl-time.none{color:var(--ink3);font-weight:400;font-size:13px}
 .dl-body{flex:1;min-width:0}
 .dl-site{font-size:15px;font-weight:600}
-.dl-desc{font-size:13px;color:var(--ink2);margin-top:1px}
+.dl-desc{font-size:13px;color:var(--ink2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dl-row.done .dl-site{text-decoration:line-through;opacity:.55}
-.dl-site-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.dl-wk{font-size:12px;font-weight:600;color:var(--coral);background:var(--coral-bg);
-  border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;letter-spacing:-.2px}
-.dl-wk:active{opacity:.6}
+.dl-site-line{display:flex;align-items:center;gap:6px;min-width:0}
+.dl-site-line .dl-site{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 현장명 옆 작은 분류 태그 */
+.tag-mini{font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:5px;flex-shrink:0;letter-spacing:-.2px}
+.tag-mini.미팅{background:var(--blue-bg);color:var(--blue)}
+.tag-mini.견적{background:var(--gold-bg);color:var(--gold)}
+.tag-mini.실측{background:var(--purple-bg);color:var(--purple)}
+.tag-mini.공사{background:var(--coral-bg);color:var(--coral)}
+.tag-mini.기타{background:var(--gray-bg);color:var(--ink2)}
+/* 오른쪽 끝 작업자 버튼 — 담백 */
+.dl-wkbtn{flex-shrink:0;border:1px solid var(--line2);background:var(--card);color:var(--ink2);
+  border-radius:8px;padding:6px 11px;font-size:12.5px;font-weight:600;cursor:pointer;
+  white-space:nowrap;font-family:inherit;letter-spacing:-.2px}
+.dl-wkbtn:active{background:var(--gray-bg);color:var(--ink)}
 /* 일정과 매칭 안 된 작업자 — 하단 조용히 */
 .day-wk-extra{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
 .day-wk-extra-h{font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:6px}
@@ -584,6 +594,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
     <div class="hint" id="wdvClose" style="cursor:pointer;margin-top:12px">닫기</div>
   </div>
 </div>
+
 <script>
 const DOW=["일","월","화","수","목","금","토"];
 const STORE="smh_schedule_v2";
@@ -888,7 +899,6 @@ function pushTodosToSheet(){
     }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
   },800);
 }
-
 let workersPushTimer=null;
 function pushWorkersToSheet(){
   if(workersPushTimer)clearTimeout(workersPushTimer);
@@ -1518,7 +1528,6 @@ V.addEventListener("click",e=>{
   if(wid){openWorkerDetail(Number(wid.dataset.wid));return;}
   const wcell=e.target.closest("[data-wdate]");
   if(wcell){const inEv=e.target.closest(".ev");if(!inEv){openWorkerModal(null,wcell.dataset.wdate);return;}}
-
   // ----- 할 일 -----
   const tdel=e.target.closest("[data-tdel]");
   if(tdel){if(!confirm("할 일을 삭제할까요?"))return;const id=Number(tdel.dataset.tdel);markDeleted(DEL_TODOS,id);TODOS=TODOS.filter(x=>x.id!==id);saveTodos();render();return;}
@@ -1679,36 +1688,24 @@ function openDay(ds){
   evs.forEach(e=>{
     const t=e.time?`<div class="dl-time">${esc(e.time)}</div>`:`<div class="dl-time none">종일</div>`;
     const dn=e.status==="완료"?"done":"";
-    // 현장이 같은 작업자 찾기
-    let wkLink="";
+    // 현장이 같은 작업자 찾기 → 오른쪽 끝 담백한 버튼
+    let wkBtn="";
     if(e.site){
       const es=normSite(e.site);
       const mw=dayWk.filter(w=>w.site&&normSite(w.site)===es);
       if(mw.length){
         mw.forEach(w=>matched.add(w.id));
-        wkLink=`<span class="dl-wk" data-wksite="${esc(e.site)}" data-wkds="${ds}">👷 ${mw.length}명 ›</span>`;
+        wkBtn=`<button class="dl-wkbtn" data-wksite="${esc(e.site)}" data-wkds="${ds}">작업자 ${mw.length}명</button>`;
       }
     }
     html+=`<div class="dl-row ${dn}" data-id="${e.id}">${t}
-      <div class="dl-body"><div class="dl-site-line"><span class="dl-site">${esc(e.site)}</span>${wkLink}</div>
-      ${e.desc?`<div class="dl-desc">${esc(e.desc)}</div>`:""}
-      <span class="tag ${esc(e.kind)}" style="margin-top:5px;display:inline-block">${esc(e.kind)}</span></div></div>`;
+      <div class="dl-body">
+        <div class="dl-site-line"><span class="dl-site">${esc(e.site)}</span><span class="tag-mini ${esc(e.kind)}">${esc(e.kind)}</span></div>
+        ${e.desc?`<div class="dl-desc">${esc(e.desc)}</div>`:""}
+      </div>
+      ${wkBtn}</div>`;
   });
   if(!evs.length)html=`<div class="empty">이 날 일정이 없습니다</div>`;
-  // 일정과 매칭 안 된 작업자(현장 미정 또는 일정에 없는 현장) → 하단에 조용히 표기
-  const orphan=dayWk.filter(w=>!matched.has(w.id));
-  if(orphan.length){
-    html+=`<div class="day-wk-extra"><div class="day-wk-extra-h">그 외 작업자</div>`;
-    orphan.forEach(w=>{
-      const isPaid=w.paid==="지급완료";
-      html+=`<div class="day-wk-row ${isPaid?'paid':''}" data-wid="${w.id}">
-        <span class="day-wk-name">${esc(w.worker||"(이름없음)")}</span>
-        <span class="tag wk wk-${esc(w.kind)}">${esc(w.kind)}</span>
-        <span class="day-wk-site">${esc(w.site||"현장 미정")}</span>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
   document.getElementById("dayList").innerHTML=html;
   dayov.classList.add("show");
 }
@@ -1981,11 +1978,13 @@ function openWorkerDay(ds,siteFilter){
   let html="";
   list.forEach(w=>{
     const isPaid=w.paid==="지급완료";
-    html+=`<div class="dl-row ${isPaid?'done':''}" data-wid="${w.id}">
-      <div class="dl-time ${w.time?'':'none'}">${esc(w.time)||"종일"}</div>
-      <div class="dl-body"><div class="dl-site">${esc(w.worker)||"(이름없음)"} · ${fmtWon(w.pay)}원</div>
-      <div class="dl-desc">${esc(w.site)||"현장 미정"}${w.memo?" · "+esc(w.memo):""}</div>
-      <span class="tag wk wk-${esc(w.kind)}" style="margin-top:5px;display:inline-block">${esc(w.kind)}</span></div></div>`;
+    const t=w.time?`<div class="dl-time">${esc(w.time)}</div>`:`<div class="dl-time none">종일</div>`;
+    const desc=[w.site||"현장 미정",w.memo].filter(Boolean).join(" · ");
+    html+=`<div class="dl-row ${isPaid?'done':''}" data-wid="${w.id}">${t}
+      <div class="dl-body">
+        <div class="dl-site-line"><span class="dl-site">${esc(w.worker)||"(이름없음)"}</span><span class="tag-mini wk-${esc(w.kind)}">${esc(w.kind)}</span></div>
+        <div class="dl-desc">${esc(desc)}</div>
+      </div></div>`;
   });
   if(!list.length)html=`<div class="empty">작업자가 없습니다</div>`;
   if(dayov.dataset.from==="event"){
