@@ -797,20 +797,25 @@ async function postSheetRows(sheet,rows){
     body:JSON.stringify({sheet:sheet,action:"replaceAll",rows:rows})});
 }
 async function mergedRowsFor(sheet,localItems,rowToObj,objToRow,deletedKey){
+  const validId=(id)=>{
+    const n=Number(id);
+    const s=String(id);
+    return isFinite(n)&&n>0&&n<=Number.MAX_SAFE_INTEGER&&s.indexOf("e")<0&&s.indexOf("E")<0;
+  };
   try{
     const j=await fetchSheetJson();
     const remoteRows=Array.isArray(j?.[sheet])?j[sheet]:[];
     const deleted=readIdSet(deletedKey);
     const map=new Map();
     remoteRows.map(rowToObj).forEach(obj=>{
-      if(obj&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
+      if(obj&&validId(obj.id)&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
     });
     (localItems||[]).forEach(obj=>{
-      if(obj&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
+      if(obj&&validId(obj.id)&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
     });
     return [...map.values()].map(objToRow);
   }catch(e){
-    return (localItems||[]).filter(obj=>notDeleted(deletedKey,obj)).map(objToRow);
+    return (localItems||[]).filter(obj=>obj&&validId(obj.id)&&notDeleted(deletedKey,obj)).map(objToRow);
   }
 }
 async function mergedSiteRows(){
@@ -928,10 +933,13 @@ async function syncFromSheet(){
       localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));
     }else if(isDirty(DIRTY_TODOS)){pushTodosToSheet();}
     if(!DEMO_WORKERS){
-      if(j.작업자&&!isDirty(DIRTY_WORKERS)){
+      // 작업자는 시트를 항상 진실로 삼아 받아온다 (dirty가 박혀 있어도 화면엔 시트 기준 표시).
+      if(j.작업자){
         WORKERS=j.작업자.map(rowToWorker).filter(x=>notDeleted(DEL_WORKERS,x));
         localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));
-      }else if(isDirty(DIRTY_WORKERS)){pushWorkersToSheet();}
+      }
+      // 로컬에서 만든 변경분이 아직 안 올라갔으면 push (push 끝나면 dirty 해제됨)
+      if(isDirty(DIRTY_WORKERS)){pushWorkersToSheet();}
     }
     setSync("ok");render();
   }catch(err){setSync("error");}
@@ -1110,6 +1118,7 @@ function attentionHTML(){
     <div class="attn-toggle" id="attnToggle">확인 필요한 일정 ${od.length}건 <span style="margin-left:auto">▾</span></div>
     <div class="attn-list" id="attnList">${rows}</div></div>`;
 }
+
 /* ===== 오늘 상세 (카드형) ===== */
 function renderToday(){
   const d=new Date(),ds=todayStr();
