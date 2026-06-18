@@ -778,8 +778,8 @@ function saveWorkers(){
   localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));markDirty(DIRTY_WORKERS);pushWorkersToSheet();}
 
 /* ===== 구글 시트 동기화 ===== */
-const SHEET_API="https://script.google.com/macros/s/AKfycbxpVomFCLHKyph4mm9G50tPH96OTDM0IA7ZiLl_M21oxbA2BVisv6i3-3gTsN6PDzFLqA/exec";
-let syncState="";  // "", "loading", "saving", "ok", "error"
+const SHEET_API="https://script.google.com/macros/s/AKfycbzZm2mWNzUsVEI_X8YWXdMbVgu_w7vbZED3JKT93gaMwOj2hOCj7CFgzMgYGih_NbrbrQ/exec";
+  let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
 
