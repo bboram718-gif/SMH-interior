@@ -324,6 +324,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 .day-wkbtn{border:none;background:none;color:var(--ink3);font-size:13px;font-weight:600;
   cursor:pointer;font-family:inherit;padding:4px 0}
 .day-wkbtn:active{color:var(--ink)}
+.day-wkadd{width:100%;margin-top:12px;border:1px dashed var(--line2);background:none;color:var(--gold);
+  border-radius:9px;padding:11px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.day-wkadd:active{background:var(--gold-bg)}
 
 /* todo */
 .paste-box{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:8px 0 14px;overflow:hidden}
@@ -459,6 +462,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 </div>
 
 <button class="fab" id="addBtn">+</button>
+
 <div class="ov" id="dayov">
   <div class="sheet">
     <h2 id="dayTitle" style="margin-bottom:12px"></h2>
@@ -778,8 +782,8 @@ function saveWorkers(){
   localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));markDirty(DIRTY_WORKERS);pushWorkersToSheet();}
 
 /* ===== 구글 시트 동기화 ===== */
-const SHEET_API="https://script.google.com/macros/s/AKfycbzZm2mWNzUsVEI_X8YWXdMbVgu_w7vbZED3JKT93gaMwOj2hOCj7CFgzMgYGih_NbrbrQ/exec";
-  let syncState="";  // "", "loading", "saving", "ok", "error"
+const SHEET_API="https://script.google.com/macros/s/AKfycbxpVomFCLHKyph4mm9G50tPH96OTDM0IA7ZiLl_M21oxbA2BVisv6i3-3gTsN6PDzFLqA/exec";
+let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
 
@@ -868,16 +872,25 @@ function todoToRow(t){
     "완료":t.done?"true":"false","승격여부":t.promoted?"true":"false"};
 }
 // 작업자 시트 ↔ 앱
+// 작업ID는 16자리 큰 숫자라 시트에 숫자로 저장하면 지수표기(1.78E+15)로 뭉개져
+// 서로 덮어써서 동기화가 깨진다. 그래서 시트에는 "w_"+ID 문자열로 저장하고 읽을 때 복원한다.
+function parseWorkerId(v){
+  let s=String(v==null?"":v).trim();
+  if(s.indexOf("w_")===0)s=s.slice(2);
+  s=s.replace(/[^\d]/g,"");
+  const n=Number(s);
+  return (s&&isFinite(n))?n:0;
+}
 function rowToWorker(r){
   let pay=r["일당"];
   if(typeof pay==="string")pay=Number(pay.replace(/[^\d.-]/g,""))||0;
   else pay=Number(pay)||0;
-  return {id:Number(r["작업ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+  return {id:parseWorkerId(r["작업ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     worker:String(r["작업자"]||""),site:String(r["현장"]||""),kind:String(r["구분"]||"기타"),
     pay:pay,paid:String(r["지급여부"]||"미지급"),memo:String(r["메모"]||"")};
 }
 function workerToRow(w){
-  return {"작업ID":w.id,"날짜":w.date||"","시간":w.time||"","작업자":w.worker||"","현장":w.site||"",
+  return {"작업ID":"w_"+w.id,"날짜":w.date||"","시간":w.time||"","작업자":w.worker||"","현장":w.site||"",
     "구분":w.kind||"기타","일당":w.pay||0,"지급여부":w.paid||"미지급","메모":w.memo||""};
 }
 
@@ -983,6 +996,7 @@ function todayStr(){return fmt(new Date());}
 function byTime(a,b){const ta=a.time||"99:99",tb=b.time||"99:99";return ta<tb?-1:ta>tb?1:0;}
 function evOf(ds){return DATA.filter(e=>e.date===ds).sort(byTime);}
 function weekStart(d){const s=new Date(d);s.setDate(d.getDate()-d.getDay());s.setHours(0,0,0,0);return s;} // 일요일 시작
+
 const V=document.getElementById("view");
 // 일정 탭 기간 토글 (오늘/2주/월간)
 function scheduleToggleHTML(){
@@ -1096,7 +1110,6 @@ function attentionHTML(){
     <div class="attn-toggle" id="attnToggle">확인 필요한 일정 ${od.length}건 <span style="margin-left:auto">▾</span></div>
     <div class="attn-list" id="attnList">${rows}</div></div>`;
 }
-
 /* ===== 오늘 상세 (카드형) ===== */
 function renderToday(){
   const d=new Date(),ds=todayStr();
@@ -1549,6 +1562,7 @@ function parseNote(raw){
   });
   return {raw,items};
 }
+
 /* ===== events ===== */
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
@@ -1734,29 +1748,15 @@ function openDay(ds){
   const evs=evOf(ds);
   const d=new Date(ds+"T00:00");
   document.getElementById("dayTitle").textContent=`${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]}) 일정`;
-  // 그날 작업자 → 현장명(normSite)으로 일정과 매칭
-  const dayWk=wkOf(ds);
-  const matched=new Set();
   let html="";
   evs.forEach(e=>{
     const t=e.time?`<div class="dl-time">${esc(e.time)}</div>`:`<div class="dl-time none">종일</div>`;
     const dn=e.status==="완료"?"done":"";
-    // 현장이 같은 작업자 찾기 → 오른쪽 끝 담백한 버튼
-    let wkBtn="";
-    if(e.site){
-      const es=normSite(e.site);
-      const mw=dayWk.filter(w=>w.site&&normSite(w.site)===es);
-      if(mw.length){
-        mw.forEach(w=>matched.add(w.id));
-        wkBtn=`<button class="dl-wkbtn" data-wksite="${esc(e.site)}" data-wkds="${ds}">작업자 ${mw.length}명</button>`;
-      }
-    }
     html+=`<div class="dl-row ${dn}" data-id="${e.id}">${t}
       <div class="dl-body">
         <div class="dl-site-line"><span class="dl-site">${esc(e.site)}</span><span class="tag-mini ${esc(e.kind)}">${esc(e.kind)}</span></div>
         ${e.desc?`<div class="dl-desc">${esc(e.desc)}</div>`:""}
-      </div>
-      ${wkBtn}</div>`;
+      </div></div>`;
   });
   if(!evs.length)html=`<div class="empty">이 날 일정이 없습니다</div>`;
   document.getElementById("dayList").innerHTML=html;
@@ -1765,10 +1765,8 @@ function openDay(ds){
 document.getElementById("dayClose").onclick=()=>dayov.classList.remove("show");
 dayov.onclick=e=>{if(e.target===dayov)dayov.classList.remove("show");};
 document.getElementById("dayList").addEventListener("click",e=>{
-  const wl=e.target.closest("[data-wksite]");
-  if(wl){e.stopPropagation();dayov.dataset.from="event";openWorkerDay(wl.dataset.wkds,wl.dataset.wksite);return;}
-  const db=e.target.closest("[data-dayback]");
-  if(db){dayov.dataset.from="";openDay(db.dataset.dayback);return;}
+  const wa=e.target.closest("[data-wkadd]");
+  if(wa){dayov.classList.remove("show");openWorkerModal(null,wa.dataset.wkadd);return;}
   const wr=e.target.closest("[data-wid]");
   if(wr){dayov.classList.remove("show");openWorkerDetail(Number(wr.dataset.wid));return;}
   const r=e.target.closest(".dl-row");if(!r)return;
@@ -2040,6 +2038,10 @@ function openWorkerDay(ds,siteFilter){
       </div></div>`;
   });
   if(!list.length)html=`<div class="empty">작업자가 없습니다</div>`;
+  // 작업자 탭 달력에서 연 경우(현장 필터 아님) → 이 날에 작업 추가 버튼
+  if(!siteFilter){
+    html+=`<button class="day-wkadd" data-wkadd="${ds}">+ 이 날 작업자 추가</button>`;
+  }
   if(dayov.dataset.from==="event"){
     html=`<button class="day-wkbtn" data-dayback="${ds}" style="margin-bottom:6px">‹ 일정으로 돌아가기</button>`+html;
   }
