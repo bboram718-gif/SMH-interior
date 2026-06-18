@@ -115,7 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun 
 /* weekly memo */
 .wmemo{background:#fcfbf7;border:1px dashed var(--line2);border-radius:10px;padding:10px 13px;margin:8px 0 18px;overflow:hidden}
 .wmemo-h{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
-.wmemo-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x}
+.wmemo-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .wmemo-scroll::-webkit-scrollbar{display:none}
 .wmemo-list{display:inline-block;min-width:100%}
 .wmemo-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;border-top:1px solid #eee6d6}
@@ -720,7 +720,7 @@ const WORKER_STORE="smh_workers_v1";
 /* ===== [데모용] 작업자 예시 — 구글 시트와 연동 안 됨, 이 파일에서만 보임 =====
    DEMO_WORKERS=true 이면 시트에서 작업자를 불러오거나 올리지 않고
    아래 예시만 화면에 표시합니다. 실제 운영 시에는 false 로 바꾸세요. */
-const DEMO_WORKERS=true;
+const DEMO_WORKERS=false;
 const WORKER_DEMO=[
   // 6/12 필복싱 (일정 있음) — 2명
   {id:9001,date:"2026-06-12",time:"08:00",worker:"김반장",site:"필복싱",kind:"전기",pay:0,paid:"미지급",memo:"간접등 철거 후 레일조명"},
@@ -1334,10 +1334,10 @@ function workerCalHTML(y,m){
     const MAX=3;
     ws.slice(0,MAX).forEach(w=>{
       const pd=w.paid==="지급완료"?"done":"";
-      inner+=`<div class="ev wk-${esc(w.kind)} ${pd}" data-wid="${w.id}">${esc(w.worker||w.kind)}</div>`;
+      inner+=`<div class="ev wk-${esc(w.kind)} ${pd}">${esc(w.worker||w.kind)}</div>`;
     });
-    if(ws.length>MAX)inner+=`<div class="ev-more" data-wday="${ds}">+${ws.length-MAX}명</div>`;
-    cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-wdate="${ds}">${inner}</div>`;
+    if(ws.length>MAX)inner+=`<div class="ev-more">+${ws.length-MAX}명</div>`;
+    cells+=`<div class="cell ${other?'other':''} ${isT?'today':''}" data-wdate="${ds}" data-whasrows="${ws.length>0?1:0}">${inner}</div>`;
   }
   return `<div class="cal" id="workerCal"><div class="dow"><div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div></div>
     <div class="grid">${cells}</div></div>`;
@@ -1576,7 +1576,10 @@ V.addEventListener("click",e=>{
   const wid=e.target.closest("[data-wid]");
   if(wid){openWorkerDetail(Number(wid.dataset.wid));return;}
   const wcell=e.target.closest("[data-wdate]");
-  if(wcell){const inEv=e.target.closest(".ev");if(!inEv){openWorkerModal(null,wcell.dataset.wdate);return;}}
+  if(wcell){
+    if(wcell.dataset.whasrows==="1"){dayov.dataset.from="";openWorkerDay(wcell.dataset.wdate);return;}
+    openWorkerModal(null,wcell.dataset.wdate);return;
+  }
 
   // ----- 할 일 -----
   const tdel=e.target.closest("[data-tdel]");
@@ -1611,6 +1614,7 @@ V.addEventListener("click",e=>{
     saveTodos();pastePreview=null;pasteOpen=false;localStorage.removeItem("smh_paste_draft");render();return;}
   const titem=e.target.closest("[data-todoid]");
   if(titem){openTodoDetail(Number(titem.dataset.todoid));return;}
+
   const done=e.target.closest("[data-done]");
   if(done){const id=Number(done.dataset.done);const ev=DATA.find(x=>x.id===id);
     ev.status=ev.status==="완료"?"예정":"완료";save();render();return;}
@@ -2089,8 +2093,8 @@ function openWorkerDetail(id){
   const isPaid=w.paid==="지급완료";
   g("wdvStatus").textContent=isPaid?"지급완료":"미지급";
   g("wdvStatus").className="dv-v"+(isPaid?" done":"");
-  // 일당 입력이 있을 때만 지급 버튼 의미가 있음
-  g("wdvPaid").style.display=hasPay?"block":"none";
+  // 지급 버튼은 금액과 무관하게 항상 표시
+  g("wdvPaid").style.display="block";
   g("wdvPaid").textContent=isPaid?"미지급으로 되돌리기":"지급완료 처리";
   wdov.classList.add("show");
 }
