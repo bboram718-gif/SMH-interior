@@ -2433,7 +2433,8 @@ function memoRow(e){
   const done=e.status==='완료',carry=!done&&(e.originalWeek||e.week)<memoWeek(e),notes=timingNotes(e);
   return `<div class="wmemo-item mrow${done?' done':''}"><button class="mcheck" data-v3done="${e.id}" title="${done?'완료 취소':'완료'}" aria-label="${esc(e.site)} ${done?'완료 취소':'완료'}">${ICON_CHECK}</button><span class="wtag">${kindTag(e)}</span><span class="wmemo-text" data-memoedit="${e.id}" title="눌러서 수정 · 날짜 잡기">${esc(e.site)}${e.desc?' · '+esc(e.desc):''}${carry?' <span class="carry-label">이월</span>':''}${notes?` <span class="mnote">${esc(notes)}</span>`:''}</span>${!done?`<span class="macts"><button class="wmemo-btn" data-memotodo="${e.id}" title="할일로 보내기" aria-label="할일로 보내기">${ICON_TODO}</button><button class="wmemo-btn" data-nextweek="${e.id}" title="다음 주로" aria-label="다음 주로">${ICON_NEXT}</button></span>`:''}</div>`;
 }
-function moveMemoNextWeek(id){const item=DATA.find(x=>x.id===id);if(!item)return;item.originalWeek=item.originalWeek||item.week;item.week=addDays(memoWeek(item),7);save();render();}
+function memoLabel(e){return (e.site||'')+(e.desc?' · '+e.desc:'');}
+function moveMemoNextWeek(id){const item=DATA.find(x=>x.id===id);if(!item)return false;if(!confirm(`${weekTitle(addDays(memoWeek(item),7))}로 넘길까요?\n· ${memoLabel(item)}`))return false;item.originalWeek=item.originalWeek||item.week;item.week=addDays(memoWeek(item),7);save();render();return true;}
 function weekTitle(key){const now=wkKey(new Date()),next=addDays(now,7);return key===now?'이번 주':key===next?'다음 주':shortDate(key)+' 주';}
 renderBoard=function(){
   const base=weekStart(cur);let html=scheduleToggleHTML()+`<div class="nav" style="justify-content:flex-end"><div class="arrows"><button class="btn today" data-go="today">이번 주</button><button class="btn" data-go="prev">‹ 이전</button><button class="btn" data-go="next">다음 ›</button></div></div><div class="scrollhint">← 좌우로 넘겨서 보세요 →</div><div class="board-area">`;
@@ -2484,9 +2485,9 @@ function deleteEvent(id){const ev=DATA.find(x=>x.id===id);if(!ev)return false;co
   markDeleted(DEL_EVENTS,id);DATA=DATA.filter(x=>x.id!==id);save();return true;}
 v3el('dvDel').onclick=()=>{if(deleteEvent(detailId)){closeDetail();render();}};
 v3el('delBtn').onclick=()=>{if(deleteEvent(editId)){closeModal();render();}};
-function moveMemoToTodo(id){const e=DATA.find(e=>e.id===id);if(!e)return;const t={id:uid(),text:e.desc||e.site,site:e.site,desc:e.desc,memo:e.memo,kind:e.kind,color:e.color,dueDate:e.dueDate,followUp:e.followUp,state:e.status,done:e.status==='완료',sub:[]};TODOS.push(t);markDeleted(DEL_EVENTS,e.id);DATA=DATA.filter(x=>x.id!==e.id);save();saveTodos();closeDetail();render();}
+function moveMemoToTodo(id){const e=DATA.find(e=>e.id===id);if(!e)return;if(!confirm(`할일로 보낼까요?\n· ${memoLabel(e)}`))return;const t={id:uid(),text:e.desc||e.site,site:e.site,desc:e.desc,memo:e.memo,kind:e.kind,color:e.color,dueDate:e.dueDate,followUp:e.followUp,state:e.status,done:e.status==='완료',sub:[]};TODOS.push(t);markDeleted(DEL_EVENTS,e.id);DATA=DATA.filter(x=>x.id!==e.id);save();saveTodos();closeDetail();render();}
 v3el('dvToTodo').onclick=()=>moveMemoToTodo(detailId);
-v3el('dvNextWeek').onclick=()=>{const id=detailId;closeDetail();moveMemoNextWeek(id);};
+v3el('dvNextWeek').onclick=()=>{if(moveMemoNextWeek(detailId))closeDetail();};
 V.addEventListener('click',e=>{
   const done=e.target.closest('[data-v3done]');if(done){e.stopImmediatePropagation();const item=DATA.find(x=>x.id===Number(done.dataset.v3done));if(item){setEventDone(item,item.status!=='완료');save();render();}return;}
   const move=e.target.closest('[data-nextweek]');if(move){e.stopImmediatePropagation();moveMemoNextWeek(Number(move.dataset.nextweek));return;}
@@ -2527,7 +2528,7 @@ renderTodo=function(){oldRenderTodo();const moved=TODOS.filter(t=>!t.done&&todoM
 V.addEventListener('click',e=>{
   const linked=e.target.closest('[data-linked-event]');if(linked){e.stopImmediatePropagation();openDetail(Number(linked.dataset.linkedEvent));return;}
   const done=e.target.closest('[data-todocheck]');if(done){e.stopImmediatePropagation();const t=TODOS.find(t=>t.id===Number(done.dataset.todocheck));if(t){t.done=!t.done;t.state=t.done?'완료':'예정';const event=DATA.find(x=>x.id===t.eventId);if(event){setEventDone(event,t.done);save();}saveTodos();render();}return;}
-  const move=e.target.closest('[data-v3toweek]');if(move){e.stopImmediatePropagation();const t=TODOS.find(t=>t.id===Number(move.dataset.v3toweek));if(t){DATA.push({id:uid(),date:'',week:wkKey(new Date()),site:t.site||t.text,desc:t.site?(t.desc||t.text):'',memo:[t.memo,...(t.sub||[])].filter(Boolean).join('\n'),kind:t.kind,color:t.color,dueDate:t.dueDate,followUp:t.followUp,status:t.state||'예정',timeMode:'unset'});markDeleted(DEL_TODOS,t.id);TODOS=TODOS.filter(x=>x.id!==t.id);save();saveTodos();render();}return;}
+  const move=e.target.closest('[data-v3toweek]');if(move){e.stopImmediatePropagation();const t=TODOS.find(t=>t.id===Number(move.dataset.v3toweek));if(t&&confirm(`이번 주 메모로 옮길까요?\n· ${t.text||t.site||''}`)){DATA.push({id:uid(),date:'',week:wkKey(new Date()),site:t.site||t.text,desc:t.site?(t.desc||t.text):'',memo:[t.memo,...(t.sub||[])].filter(Boolean).join('\n'),kind:t.kind,color:t.color,dueDate:t.dueDate,followUp:t.followUp,status:t.state||'예정',timeMode:'unset'});markDeleted(DEL_TODOS,t.id);TODOS=TODOS.filter(x=>x.id!==t.id);save();saveTodos();render();}return;}
 },true);
 
 /* 현장 탭 = 등록한 현장만. 이름이 조금 다른 건 '합치기'로 별칭에 넣어 한 현장으로 모으고,
