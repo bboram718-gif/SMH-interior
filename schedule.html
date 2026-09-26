@@ -2431,7 +2431,7 @@ const ICON_NEXT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const ICON_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 function memoRow(e){
   const done=e.status==='완료',carry=!done&&(e.originalWeek||e.week)<memoWeek(e),notes=timingNotes(e);
-  return `<div class="wmemo-item mrow${done?' done':''}"><button class="mcheck" data-v3done="${e.id}" title="${done?'완료 취소':'완료'}" aria-label="${esc(e.site)} ${done?'완료 취소':'완료'}">${ICON_CHECK}</button><span class="wtag">${kindTag(e)}</span><span class="wmemo-text" data-memoedit="${e.id}" title="눌러서 수정 · 날짜 잡기">${esc(e.site)}${e.desc?' · '+esc(e.desc):''}${carry?' <span class="carry-label">이월</span>':''}${notes?` <span class="mnote">${esc(notes)}</span>`:''}</span>${!done?`<span class="macts"><button class="wmemo-btn" data-memotodo="${e.id}" title="할일로 보내기" aria-label="할일로 보내기">${ICON_TODO}</button><button class="wmemo-btn" data-nextweek="${e.id}" title="다음 주로" aria-label="다음 주로">${ICON_NEXT}</button></span>`:''}</div>`;
+  return `<div class="wmemo-item mrow${done?' done':''}"><span class="wtag">${kindTag(e)}</span><span class="wmemo-text" data-memoedit="${e.id}" title="눌러서 수정 · 날짜 잡기">${esc(e.site)}${e.desc?' · '+esc(e.desc):''}${carry?' <span class="carry-label">이월</span>':''}${notes?` <span class="mnote">${esc(notes)}</span>`:''}</span>${!done?`<span class="macts"><button class="wmemo-btn" data-memotodo="${e.id}" title="할일로 보내기" aria-label="할일로 보내기">${ICON_TODO}</button><button class="wmemo-btn" data-nextweek="${e.id}" title="다음 주로" aria-label="다음 주로">${ICON_NEXT}</button></span>`:''}</div>`;
 }
 function memoLabel(e){return (e.site||'')+(e.desc?' · '+e.desc:'');}
 function moveMemoNextWeek(id){const item=DATA.find(x=>x.id===id);if(!item)return false;if(!confirm(`${weekTitle(addDays(memoWeek(item),7))}로 넘길까요?\n· ${memoLabel(item)}`))return false;item.originalWeek=item.originalWeek||item.week;item.week=addDays(memoWeek(item),7);save();render();return true;}
@@ -2480,7 +2480,7 @@ v3el('dvCopy').onclick=()=>{const e=DATA.find(e=>e.id===detailId);if(!e)return;c
 v3el('dvDone').onclick=()=>{const e=DATA.find(e=>e.id===detailId);if(!e)return;setEventDone(e,e.status!=='완료');save();closeDetail();render();};
 function linkedTodo(ev){return TODOS.find(t=>t.eventId===ev.id||(ev.todoId&&t.id===ev.todoId))||null;}
 function deleteEvent(id){const ev=DATA.find(x=>x.id===id);if(!ev)return false;const t=linkedTodo(ev);
-  if(!confirm(t?'이 일정을 삭제할까요?\n연결된 할일은 할 일 목록으로 돌아가요.':'이 일정을 삭제할까요?'))return false;
+  if(!confirm(`이 ${ev.date?'일정을':'메모를'} 삭제할까요?\n· ${memoLabel(ev)}${t?'\n연결된 할일은 할 일 목록으로 돌아가요.':''}`))return false;
   if(t){t.promoted=false;delete t.eventId;t.done=ev.status==='완료';t.state=t.done?'완료':(t.state==='완료'?'예정':t.state);saveTodos();}
   markDeleted(DEL_EVENTS,id);DATA=DATA.filter(x=>x.id!==id);save();return true;}
 v3el('dvDel').onclick=()=>{if(deleteEvent(detailId)){closeDetail();render();}};
