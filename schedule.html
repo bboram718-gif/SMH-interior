@@ -1609,7 +1609,7 @@ function renderTodo(){
   if(pastePreview&&pastePreview.items.length){
     html+=`<div class="preview"><div class="preview-h">정리 결과 ${pastePreview.items.length}개 · 맞으면 추가하세요</div>`;
     pastePreview.items.forEach(it=>{
-      html+=`<div class="pv-item">☐ ${esc(it.text)} ${it.site?`<span class="todo-site">${esc(it.site)}</span>`:""} <span class="tag ${esc(it.kind)}">${esc(it.kind)}</span>`;
+      html+=`<div class="pv-item">☐ ${esc(it.text)} ${it.site?`<span class="todo-site">${esc(it.site)}</span>`:""} ${kindTag(it)}`;
       it.sub.forEach(s=>html+=`<span class="pv-sub">› ${esc(s)}</span>`);
       html+=`</div>`;
     });
@@ -2266,22 +2266,36 @@ window.addEventListener("beforeunload",e=>{
  * Extra event properties travel in a versioned memo suffix. Only this suffix is
  * decoded; normal memo text, including brackets, is preserved without changes.
  */
-const V3_PALETTE=[['파랑','#185fa5'],['보라','#6854b5'],['초록','#17725b'],['주황','#ae4e27'],['노랑','#98700d'],['분홍','#af456f'],['청록','#147b88'],['빨강','#b33e3e'],['남색','#46557f'],['회색','#66645f']];
-const V3_KINDS={'미팅':'#185fa5','견적':'#98700d','실측':'#6854b5','공사':'#ae4e27','기타':'#66645f','자재':'#17725b','발주':'#147b88','배송':'#46557f','점검':'#af456f','A/S':'#b33e3e','연락':'#185fa5','개인':'#6854b5'};
+/* 구글 캘린더 일정 색 11가지와 똑같이 맞춤 (Code.gs의 색 번호표와 짝) */
+const V3_PALETTE=[['토마토','#D50000'],['홍학','#E67C73'],['귤','#F4511E'],['바나나','#F6BF26'],['세이지','#33B679'],['바질','#0B8043'],['공작','#039BE5'],['블루베리','#3F51B5'],['라벤더','#7986CB'],['포도','#8E24AA'],['흑연','#616161']];
+const V3_KINDS={'미팅':'#3F51B5','견적':'#F6BF26','실측':'#8E24AA','공사':'#F4511E','기타':'#616161','자재':'#0B8043','발주':'#039BE5','배송':'#7986CB','점검':'#E67C73','A/S':'#D50000','연락':'#3F51B5','개인':'#8E24AA'};
+/* 예전 버전에서 고른 색 → 11색 중 하나로 */
+const V3_OLD_COLORS={'#185fa5':'#3F51B5','#6854b5':'#8E24AA','#17725b':'#0B8043','#ae4e27':'#F4511E','#98700d':'#F6BF26','#af456f':'#E67C73','#147b88':'#039BE5','#b33e3e':'#D50000','#46557f':'#7986CB','#66645f':'#616161'};
+function hslOf(hex){const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,l=(mx+mn)/2;let h=0;if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h=(h*60+360)%360;}return [h,d?d/(1-Math.abs(2*l-1)):0,l];}
+function snapColor(v){
+  if(typeof v!=='string'||!/^#[0-9a-f]{6}$/i.test(v))return '';
+  const hex=v.toUpperCase(),hit=V3_PALETTE.find(p=>p[1]===hex);if(hit)return hit[1];
+  if(V3_OLD_COLORS[v.toLowerCase()])return V3_OLD_COLORS[v.toLowerCase()];
+  const [h,s,l]=hslOf(hex);if(s<.15)return '#616161';
+  let best='#616161',bd=1e9;
+  V3_PALETTE.forEach(([,c])=>{const [h2,s2,l2]=hslOf(c);if(s2<.15)return;const dh=Math.min(Math.abs(h-h2),360-Math.abs(h-h2))/180,d=dh*dh*4+(l-l2)**2+(s-s2)**2*.3;if(d<bd){bd=d;best=c;}});
+  return best;
+}
 const V3_STATUSES=['예정','진행 중','고객 답변 대기','보류','완료'];
 const v3el=id=>document.getElementById(id);
-function validColor(v){return typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);}
+function validColor(v){return !!snapColor(v);}
 function storedKinds(){try{return JSON.parse(localStorage.getItem('smh_kinds_v3')||'{}')||{};}catch{return {};}}
 function kindCatalog(){
   const kinds=Object.assign(Object.create(null),V3_KINDS);
-  Object.entries(storedKinds()).forEach(([k,c])=>{if(k&&validColor(c))kinds[k]=c;});
-  [...DATA,...TODOS].forEach(e=>{if(e.kind)kinds[e.kind]=validColor(e.color)?e.color:(kinds[e.kind]||'#66645f');});
+  Object.entries(storedKinds()).forEach(([k,c])=>{if(k&&validColor(c))kinds[k]=snapColor(c);});
+  [...DATA,...TODOS].forEach(e=>{if(e.kind)kinds[e.kind]=validColor(e.color)?snapColor(e.color):(kinds[e.kind]||'#616161');});
   return kinds;
 }
 function rememberKind(k,c){localStorage.setItem('smh_kinds_v3',JSON.stringify({...storedKinds(),[k]:c}));}
-function eventColor(e){const c=validColor(e.color)?e.color:kindCatalog()[e.kind];return validColor(c)?c:'#66645f';}
+function eventColor(e){const c=validColor(e.color)?e.color:kindCatalog()[e.kind];return snapColor(c)||'#616161';}
 function tint(hex){return '#'+[1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*.12+255*.88).toString(16).padStart(2,'0')).join('');}
-function inkFor(hex){const ch=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255),L=.2126*ch[0]+.7152*ch[1]+.0722*ch[2];if(L<=.45)return hex;const f=.45/L;return '#'+ch.map(v=>Math.round(v*f*255).toString(16).padStart(2,'0')).join('');}
+function lumOf(hex){const c=[1,3,5].map(i=>{const v=parseInt(hex.slice(i,i+2),16)/255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4;});return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+function inkFor(hex){const bg=lumOf(tint(hex));let f=1,out=hex;for(let i=0;i<30;i++){out='#'+[1,3,5].map(j=>Math.round(parseInt(hex.slice(j,j+2),16)*f).toString(16).padStart(2,'0')).join('');if((bg+.05)/(lumOf(out)+.05)>=4.5)break;f*=.9;}return out;}
 function kindStyle(e){const c=eventColor(e);return `background:${tint(c)};color:${inkFor(c)}`;}
 function kindTag(e){return `<span class="compact-tag" style="${kindStyle(e)}">${esc(e.kind||'기타')}</span>`;}
 function dateOnly(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return '';const d=new Date(v+'T12:00:00');return !isNaN(d)&&fmt(d)===v?v:'';}
@@ -2317,7 +2331,7 @@ function unpackMemo(raw){
    일정: 종료일·시간구분(종일일 때만)·종료시간·색상(기본색과 다를 때만)·마감일·재확인일·원래주간·연결할일ID
    할일: 색상·마감일·재확인일·진행상태·연결일정ID */
 function sheetCell(r,col,meta,key){const v=r[col];return v!==undefined&&v!==null&&String(v).trim()!==''?v:(meta[key]??'');}
-function sheetColor(item){return validColor(item.color)&&item.color.toLowerCase()!==String(V3_KINDS[item.kind]||'').toLowerCase()?item.color:'';}
+function sheetColor(item){const c=snapColor(item.color);return c&&c!==V3_KINDS[item.kind]?c:'';}
 function sheetId(v){const n=Number(String(v||'').replace(/[^\d]/g,''));return Number.isSafeInteger(n)&&n>0?n:null;}
 const oldRowToEvent=rowToEvent,oldEventToRow=eventToRow,oldRowToTodo=rowToTodo,oldTodoToRow=todoToRow;
 rowToEvent=function(r){
@@ -2327,7 +2341,7 @@ rowToEvent=function(r){
   e.timeMode=(tm==='종일'||tm==='allDay')?'allDay':(e.time?'time':'unset');
   if(e.timeMode==='allDay')e.time='';
   const et=normTime(sheetCell(r,'종료시간',meta,'endTime'));if(e.timeMode==='time'&&/^\d{2}:\d{2}$/.test(et))e.endTime=et;
-  const c=String(sheetCell(r,'색상',meta,'color')).trim();if(validColor(c))e.color=c;
+  const c=snapColor(String(sheetCell(r,'색상',meta,'color')).trim());if(c)e.color=c;
   for(const [k,col] of [['dueDate','마감일'],['followUp','재확인일'],['originalWeek','원래주간']]){const v=normDate(sheetCell(r,col,meta,k));if(dateOnly(v))e[k]=v;}
   const tid=sheetId(sheetCell(r,'연결할일ID',meta,'todoId'));if(tid)e.todoId=tid;
   return e;
@@ -2339,7 +2353,7 @@ eventToRow=function(e){
 };
 rowToTodo=function(r){
   const t=oldRowToTodo(r),{text,meta}=unpackMemo(t.memo);t.memo=text;
-  const c=String(sheetCell(r,'색상',meta,'color')).trim();if(validColor(c))t.color=c;
+  const c=snapColor(String(sheetCell(r,'색상',meta,'color')).trim());if(c)t.color=c;
   for(const [k,col] of [['dueDate','마감일'],['followUp','재확인일']]){const v=normDate(sheetCell(r,col,meta,k));if(dateOnly(v))t[k]=v;}
   const st=String(sheetCell(r,'진행상태',meta,'state')).trim();if(V3_STATUSES.includes(st))t.state=st;else if(t.done)t.state='완료';
   const eid=sheetId(sheetCell(r,'연결일정ID',meta,'eventId'));if(eid)t.eventId=eid;
@@ -2361,17 +2375,14 @@ function categoryEditor(prefix,e){
   const main=[...BASE_KINDS.filter(k=>all.includes(k)),...all.filter(k=>!BASE_KINDS.includes(k)&&(used.has(k)||Object.prototype.hasOwnProperty.call(stored,k)||k===selected))];
   const extra=all.filter(k=>!main.includes(k));
   const chip=(k,more)=>`<button type="button" class="kchip${more?' extra':''}${k===selected?' on':''}" data-kchip="${esc(k)}" data-prefix="${prefix}"${more?' hidden':''}>${esc(k)}</button>`;
-  return `<div class="field"><div class="label-row"><label>분류</label><button type="button" class="color-toggle" data-colortoggle="${prefix}"><span class="color-dot" id="${prefix}ColorDot" style="background:${color}"></span>색상 변경</button></div><input type="hidden" id="${prefix}Kind" value="${esc(selected)}"><div class="kchips" id="${prefix}Chips">${main.map(k=>chip(k,false)).join('')}${extra.map(k=>chip(k,true)).join('')}${extra.length?`<button type="button" class="kchip kmore" data-kmore="${prefix}">더보기</button>`:''}<button type="button" class="kchip${extra.length?' extra':''}" data-kchip="__new__" data-prefix="${prefix}"${extra.length?' hidden':''}>＋ 직접 입력</button></div><input id="${prefix}CustomKind" class="kind-custom" maxlength="30" placeholder="새 분류 이름 (예: 자재 픽업)" aria-label="새 분류 이름" hidden><div class="color-line" id="${prefix}Swatches" hidden>${V3_PALETTE.map(([n,c])=>`<button type="button" class="color-swatch${color===c?' on':''}" style="background:${c}" data-color="${c}" data-prefix="${prefix}" aria-label="${n}" title="${n}"></button>`).join('')}<label class="color-more">직접 선택<input type="color" id="${prefix}Color" value="${color}" aria-label="분류 색상 직접 선택" data-colorinput="${prefix}"></label></div></div>`;
+  return `<div class="field"><div class="label-row"><label>분류</label><button type="button" class="color-toggle" data-colortoggle="${prefix}"><span class="color-dot" id="${prefix}ColorDot" style="background:${color}"></span>색상 변경</button></div><input type="hidden" id="${prefix}Kind" value="${esc(selected)}"><div class="kchips" id="${prefix}Chips">${main.map(k=>chip(k,false)).join('')}${extra.map(k=>chip(k,true)).join('')}${extra.length?`<button type="button" class="kchip kmore" data-kmore="${prefix}">더보기</button>`:''}<button type="button" class="kchip${extra.length?' extra':''}" data-kchip="__new__" data-prefix="${prefix}"${extra.length?' hidden':''}>＋ 직접 입력</button></div><input id="${prefix}CustomKind" class="kind-custom" maxlength="30" placeholder="새 분류 이름 (예: 자재 픽업)" aria-label="새 분류 이름" hidden><div class="color-line" id="${prefix}Swatches" hidden>${V3_PALETTE.map(([n,c])=>`<button type="button" class="color-swatch${color===c?' on':''}" style="background:${c}" data-color="${c}" data-prefix="${prefix}" aria-label="${n}" title="${n}"></button>`).join('')}<input type="hidden" id="${prefix}Color" value="${color}"></div></div>`;
 }
 function setEditorColor(prefix,color){v3el(prefix+'Color').value=color;const dot=v3el(prefix+'ColorDot');if(dot)dot.style.background=color;v3el(prefix+'Swatches').querySelectorAll('[data-color]').forEach(b=>b.classList.toggle('on',b.dataset.color===color));}
 function editorKind(prefix){return v3el(prefix+'Kind').value==='__new__'?v3el(prefix+'CustomKind').value.trim():v3el(prefix+'Kind').value;}
 function extraEditor(prefix,e){return `<details class="optional-settings"${(e.dueDate||e.followUp||(e.status&&e.status!=='예정'))?' open':''}><summary>마감·진행 상태 설정 (선택)</summary><div class="field"><label for="${prefix}State">진행 상태</label><select id="${prefix}State">${V3_STATUSES.map(s=>`<option${s===(e.status||'예정')?' selected':''}>${s}</option>`).join('')}</select></div><div class="two"><div class="field"><label for="${prefix}Due">마감일</label><input type="date" id="${prefix}Due" value="${esc(e.dueDate||'')}"></div><div class="field"><label for="${prefix}Follow">다시 확인할 날짜</label><input type="date" id="${prefix}Follow" value="${esc(e.followUp||'')}"></div></div></details>`;}
-document.addEventListener('change',e=>{
-  if(e.target.dataset.colorinput)setEditorColor(e.target.dataset.colorinput,e.target.value);
-});
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-color]');if(b){setEditorColor(b.dataset.prefix,b.dataset.color);return;}
-  const kc=e.target.closest('[data-kchip]');if(kc){const p=kc.dataset.prefix,k=kc.dataset.kchip;v3el(p+'Kind').value=k;v3el(p+'Chips').querySelectorAll('[data-kchip]').forEach(x=>x.classList.toggle('on',x===kc));v3el(p+'CustomKind').hidden=k!=='__new__';if(k==='__new__')v3el(p+'CustomKind').focus();else setEditorColor(p,kindCatalog()[k]||'#66645f');return;}
+  const kc=e.target.closest('[data-kchip]');if(kc){const p=kc.dataset.prefix,k=kc.dataset.kchip;v3el(p+'Kind').value=k;v3el(p+'Chips').querySelectorAll('[data-kchip]').forEach(x=>x.classList.toggle('on',x===kc));v3el(p+'CustomKind').hidden=k!=='__new__';if(k==='__new__')v3el(p+'CustomKind').focus();else setEditorColor(p,kindCatalog()[k]||'#616161');return;}
   const km=e.target.closest('[data-kmore]');if(km){v3el(km.dataset.kmore+'Chips').querySelectorAll('.extra').forEach(x=>x.hidden=false);km.hidden=true;return;}
   const ct=e.target.closest('[data-colortoggle]');if(ct){const s=v3el(ct.dataset.colortoggle+'Swatches');s.hidden=!s.hidden;}
 });
