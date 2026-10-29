@@ -781,6 +781,7 @@ const SITE_INFO={
   "신촌푸르지오 44A":{customer:"신애님",note:"4인가구(6세·2세) / 9월10일~ 2개월 / 11월 입주\n개방감 있게, 따뜻한 화이트, 청소 적은 스타일\n안방화장실 확장 욕조+건식+놀이공간 / 거실화장실 조적 샤워부스\n가구: 세로 붙박이장, 안방 가로 붙박이장, 화장대 X\n안방 놀이방 슬라이딩 도어 / 시스템 에어컨 단내림\n주방 대면형 아일랜드, 세라믹 상판, 냉장고 2통\n중문 개방감 / 원목마루 희망(예산 따라) / 디아망 느낌 도배"},
   "원복철거":{customer:"탑부동산",note:"솔밭공원 옆 970평 철거 (지하~4층, 이마트 제외 전체)\n스프링쿨러·소방 기본배선 남기고 철거\n메인 분전반 제외 전체 철거\nB1~2층 엘베 유지 / 지하 펌프실·기계실 유지\n외부 CCTV·이마트 설비 피해 최소화 / 바닥 전부 철거"},
 };
+const SITE_SAMPLE=JSON.parse(JSON.stringify(SITE_INFO));   // 예전 기본 예시 현장 (시트에 올리지 않는 용도로만 씀)
 
 const SITE_STORE="smh_sites_v1";
 const SITE_DIRTY_STORE="smh_sites_dirty_v1";
@@ -800,7 +801,7 @@ function loadSites(){
     const s=localStorage.getItem(SITE_STORE);
     if(s){replaceSiteInfo(JSON.parse(s));return;}
   }catch(e){}
-  saveSitesLocal();
+  replaceSiteInfo({});   // 처음 여는 기기: 예시 현장 없이 시작
 }
 function markSitesDirty(){localStorage.setItem(SITE_DIRTY_STORE,"1");}
 function clearSitesDirty(){localStorage.removeItem(SITE_DIRTY_STORE);}
@@ -860,10 +861,10 @@ let editId=null;
 let custQuery="";
 
 function load(){try{const s=localStorage.getItem(STORE);if(s)return JSON.parse(s);}catch(e){}
-  localStorage.setItem(STORE,JSON.stringify(SEED));return JSON.parse(JSON.stringify(SEED));}
+  return [];}   // 처음 여는 기기는 빈 상태로 시작해서 시트에서 받아옴 (예전: 6월 예시 일정으로 시작)
 function save(){localStorage.setItem(STORE,JSON.stringify(DATA));markDirty(DIRTY_EVENTS);pushToSheet();}
 function loadTodos(){try{const s=localStorage.getItem(TODO_STORE);if(s)return JSON.parse(s);}catch(e){}
-  localStorage.setItem(TODO_STORE,JSON.stringify(TODO_SEED));return JSON.parse(JSON.stringify(TODO_SEED));}
+  return [];}
 function saveTodos(){localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));markDirty(DIRTY_TODOS);pushTodosToSheet();}
 function loadWorkers(){
   if(DEMO_WORKERS)return JSON.parse(JSON.stringify(WORKER_DEMO));
@@ -877,12 +878,32 @@ function saveWorkers(){
 const SHEET_API="https://script.google.com/macros/s/AKfycbzZm2mWNzUsVEI_X8YWXdMbVgu_w7vbZED3JKT93gaMwOj2hOCj7CFgzMgYGih_NbrbrQ/exec";
 let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
-function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
+function syncLabel(){return {loading:"불러오는 중…",saving:"저장 중…",ok:"동기화됨",saved:"저장 완료",
+  savedCal:"저장 완료 · 캘린더는 곧 반영",errorSave:"저장 안 됨 · 다시 시도 중",errorLoad:"불러오기 실패 · 다시 시도 중",
+  error:"동기화 실패(로컬 저장됨)"}[syncState]||"";}
+/* 시트에 글자로 쓴 날짜: 2026-11-04 / 2026.11.4 / 2026년 11월 4일 / 11/4 / 11월 4일(화). 연도가 없으면 올해(반년 넘게 지났으면 내년) */
+function looseDate(s){
+  let m=s.match(/^(\d{4})\s*[.\-\/년]\s*(\d{1,2})\s*[.\-\/월]\s*(\d{1,2})\s*일?\s*\.?\s*(\(.\))?$/),y,mo,d;
+  if(m){y=+m[1];mo=+m[2];d=+m[3];}
+  else if((m=s.match(/^(\d{1,2})\s*[.\-\/월]\s*(\d{1,2})\s*일?\s*\.?\s*(\(.\))?$/))){
+    const now=new Date();y=now.getFullYear();mo=+m[1];d=+m[2];
+    const t=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    if(t-new Date(y,mo-1,d)>183*86400000)y++;
+  }else return"";
+  const dt=new Date(y,mo-1,d);
+  if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d)return"";
+  return y+"-"+String(mo).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+}
 
 // 시트 날짜/시간 → 로컬 변환 (getHours/getDate 사용: 브라우저 로컬타임 = KST)
 function normDate(v){
   if(!v)return"";
-  if(typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+  if(typeof v==="string"){
+    const s=v.trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+    const loose=looseDate(s);if(loose)return loose;
+    if(!/\d{4}/.test(s))return"";   // 연도 없는 글자(11/4 등)를 2001년으로 읽지 않게
+  }
   const d=new Date(v);if(isNaN(d))return"";
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
@@ -950,17 +971,24 @@ function workerToRow(w){
 
 /* ===== 동기화 엔진 =====
  * 1) 동기화는 한 번에 하나만 돈다. 저장이 겹치면 끝난 뒤 한 번 더 돈다.
- *    (예전: 탭마다 따로, 동시에 돌아서 늦게 도착한 옛 데이터가 새 데이터를 덮을 수 있었음)
- * 2) 시트 전체는 1회에 한 번만 읽고, 실제로 내용이 바뀐 탭만 다시 쓴다.
- *    (예전: 저장할 때마다 탭별로 시트 전체를 읽고 탭 전체를 다시 씀)
- * 3) 이 기기에서 고친 항목만 시트 위에 덮어쓴다. 다른 기기에서 고친 항목은 건드리지 않는다.
+ * 2) 이 기기에서 고친 항목만 보낸다. 다른 기기에서 고친 항목은 건드리지 않는다.
  *    기준 = 마지막으로 시트와 맞춘 상태(SYNC_BASE_STORE, 행마다 짧은 지문만 저장)
- *    (예전: 이 기기에 있는 전체 목록으로 덮어써서, 오래 켜둔 기기가 다른 기기의 수정·삭제를 되돌렸음)
+ *    삭제는 앱에서 직접 지운 항목(삭제 기록이 있는 것)만 보낸다.
+ * 3) 새 Code.gs(v4)면 '바뀐 행 + 지운 ID'만 보내고, 응답으로 최신 시트를 받는다 (저장 1번 = 요청 1번).
+ *    예전 Code.gs면 자동으로 예전 방식(시트 읽기 → 탭 통째로 교체)으로 저장한다.
  * 4) 저장 응답을 확인한다. 실패하면 '동기화 실패'로 남기고 잠시 뒤 다시 시도한다.
- *    (예전: 실패해도 '동기화됨'으로 표시되고, 다음 실행 때 시트 내용으로 덮여 수정이 사라졌음)
  * 5) 앱으로 돌아오면(화면 켜짐·창 포커스·인터넷 재연결) 시트에서 새로 받아온다.
  */
 const SYNC_BASE_STORE="smh_sync_base_v1";
+function filledVal(v){return v!==null&&v!==undefined&&String(v).trim()!=="";}
+/* 내용 없는 항목(날짜·현장·내용·메모가 모두 빔)은 일정으로 치지 않는다.
+   예전: 시트에서 이런 줄을 읽으면 새 ID와 '기타'·'예정'을 붙여 다시 저장 → 빈 일정이 수백 줄씩 불어남 */
+function hasContent(c,o){
+  if(c.sheet==="일정")return [o.date,o.week,o.site,o.desc,o.memo].some(filledVal);
+  if(c.sheet==="할일")return [o.text,o.site,o.desc,o.memo].some(filledVal)||(Array.isArray(o.sub)&&o.sub.some(filledVal));
+  if(c.sheet==="작업자")return [o.worker,o.date,o.site,o.memo].some(filledVal);
+  return filledVal(o.name);
+}
 function validId(id){
   const n=Number(id),s=String(id);
   return isFinite(n)&&n>0&&n<=Number.MAX_SAFE_INTEGER&&s.indexOf("e")<0&&s.indexOf("E")<0;
@@ -989,20 +1017,31 @@ async function fetchSheetJson(){
   if(!j||typeof j!=="object"||j.error)throw new Error("시트 응답 오류");
   return j;
 }
-async function postSheetRows(sheet,rows){
+async function postJson(body){
   const res=await sheetFetch({method:"POST",
     headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body:JSON.stringify({sheet:sheet,action:"replaceAll",rows:rows})},90000);
+    body:JSON.stringify(body)},90000);
   if(!res.ok)throw new Error("HTTP "+res.status);
   const text=await res.text();
   let j=null;try{j=JSON.parse(text);}catch(e){}
-  if(j&&typeof j==="object"){
-    if(j.error||j.ok===false||j.success===false||/^(error|fail)/i.test(String(j.status||j.result||"")))
-      throw new Error(String(j.error||j.message||"저장 실패"));
-  }else if(/<html|<!doctype/i.test(text)){
-    throw new Error("Apps Script 오류 페이지");   // 스크립트 오류는 200 + HTML로 돌아온다
-  }
+  if(j&&typeof j==="object")return j;
+  if(/<html|<!doctype/i.test(text))throw new Error("Apps Script 오류 페이지");   // 스크립트 오류는 200 + HTML로 돌아온다
+  return {};
+}
+function failed(j){
+  return !!(j.error||j.ok===false||j.success===false||/^(error|fail)/i.test(String(j.status||j.result||"")));
+}
+async function postSheetRows(sheet,rows){
+  const j=await postJson({sheet:sheet,action:"replaceAll",rows:rows});
+  if(failed(j))throw new Error(String(j.error||j.message||"저장 실패"));
   return j;
+}
+let sheetApi="";   // "" 모름 · "sync" 새 Code.gs · "legacy" 예전 Code.gs
+async function postSync(changes){
+  const j=await postJson({action:"sync",changes:changes});
+  if(j.ok===true&&j.data&&typeof j.data==="object"){sheetApi="sync";return j;}
+  if(/^(unknown sheet|bad request)/.test(String(j.error||""))){sheetApi="legacy";return null;}   // 예전 Code.gs의 응답
+  throw new Error(String(j.error||j.message||"저장 실패"));
 }
 
 function pruneSiteOrder(){
@@ -1013,65 +1052,88 @@ function pruneSiteOrder(){
 }
 const SYNC_COLLS=[
   {sheet:"일정",dirty:DIRTY_EVENTS,del:DEL_EVENTS,store:STORE,
-    get:()=>DATA,set:v=>{DATA=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    samples:()=>SEED,get:()=>DATA,set:v=>{DATA=v;},key:o=>String(o.id),idCell:k=>k,ok:o=>validId(o.id),
     from:r=>rowToEvent(r),to:o=>eventToRow(o)},
   {sheet:"할일",dirty:DIRTY_TODOS,del:DEL_TODOS,store:TODO_STORE,
-    get:()=>TODOS,set:v=>{TODOS=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    samples:()=>TODO_SEED,get:()=>TODOS,set:v=>{TODOS=v;},key:o=>String(o.id),idCell:k=>k,ok:o=>validId(o.id),
     from:r=>rowToTodo(r),to:o=>todoToRow(o)},
   {sheet:"작업자",dirty:DIRTY_WORKERS,del:DEL_WORKERS,store:WORKER_STORE,skip:()=>DEMO_WORKERS,
-    get:()=>WORKERS,set:v=>{WORKERS=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    samples:()=>[],get:()=>WORKERS,set:v=>{WORKERS=v;},key:o=>String(o.id),idCell:k=>"w_"+k,ok:o=>validId(o.id),
     from:r=>rowToWorker(r),to:o=>workerToRow(o)},
   {sheet:"현장",dirty:SITE_DIRTY_STORE,del:null,store:null,
+    samples:()=>Object.entries(SITE_SAMPLE).map(([name,i])=>({customer:i.customer||"",note:i.note||"",hidden:false,aliases:[],name})),
     get:()=>Object.entries(SITE_INFO).map(([name,info])=>Object.assign({},info,{name})),
     set:list=>{const o={};list.forEach(s=>{o[s.name]=s;});replaceSiteInfo(o);saveSitesLocal();pruneSiteOrder();},
-    key:o=>o.name,ok:o=>!!(o&&o.name),
+    key:o=>o.name,idCell:k=>k,ok:o=>!!(o&&o.name),
     from:r=>rowToSite(r),to:o=>siteToRow(o.name,o)}
 ];
 function loadSyncBase(){try{return JSON.parse(localStorage.getItem(SYNC_BASE_STORE)||"{}")||{};}catch(e){return {};}}
 function saveSyncBase(b){try{localStorage.setItem(SYNC_BASE_STORE,JSON.stringify(b));}catch(e){}}
 function rowSig(c,o){return sig(JSON.stringify(c.to(o)));}
+function usable(c,o){return !!o&&c.ok(o)&&hasContent(c,o);}
 function snapshotOf(c){
   const m=new Map();
-  (c.get()||[]).forEach(o=>{if(o&&c.ok(o))m.set(c.key(o),{o,s:rowSig(c,o)});});
+  (c.get()||[]).forEach(o=>{if(usable(c,o))m.set(c.key(o),{o,s:rowSig(c,o)});});
   return m;
 }
-/* 이 기기에서 바뀐 항목(추가·수정·삭제)의 키 */
+/* 앱에 들어 있던 6월 예시 데이터(일정 22개·할일 8개·현장 6곳). 손대지 않은 채로는 시트에 올리지 않는다.
+   (예전: 새 기기에서 열자마자 무언가 저장하면 예시 데이터가 통째로 시트와 캘린더에 올라갔음) */
+const _sampleSets={};
+function sampleSet(c){
+  if(!_sampleSets[c.sheet]){
+    const set=new Set();
+    try{(c.samples?c.samples():[]).forEach(o=>{if(usable(c,o))set.add(rowSig(c,o));});}catch(e){}
+    _sampleSets[c.sheet]=set;
+  }
+  return _sampleSets[c.sheet];
+}
+/* 이 기기에서 바뀐 항목(추가·수정·삭제)의 키.
+   삭제는 앱에서 지워서 삭제 기록이 남은 것만 센다. 그 밖에 로컬에서 빠진 항목은 시트에서 다시 받아온다
+   (로컬 저장소가 깨지거나 초기화돼도 시트의 일정을 지우지 않게). */
 function pendingKeys(c,snap,baseC){
-  const keys=new Set();
+  const keys=new Set(),samples=sampleSet(c);
+  const real=(k,v)=>!(samples.has(v.s)&&!(baseC&&k in baseC));   // 손대지 않은 예시 데이터는 제외
   if(!baseC){   // 이 버전으로 처음 동기화: 예전 방식의 '변경 있음' 표시를 그대로 따른다
-    if(isDirty(c.dirty))snap.forEach((v,k)=>keys.add(k));
+    if(isDirty(c.dirty))snap.forEach((v,k)=>{if(real(k,v))keys.add(k);});
     return keys;
   }
-  snap.forEach((v,k)=>{if(baseC[k]!==v.s)keys.add(k);});
-  Object.keys(baseC).forEach(k=>{if(!snap.has(k))keys.add(k);});
+  snap.forEach((v,k)=>{if(baseC[k]!==v.s&&real(k,v))keys.add(k);});
+  if(c.del){
+    const del=readIdSet(c.del);
+    Object.keys(baseC).forEach(k=>{if(!snap.has(k)&&del.has(k))keys.add(k);});
+  }
   return keys;
 }
-function planColl(c,snap,j,baseC){
+/* mode: "pull"·"sync" = 받은 시트가 곧 기준 / "replace" = 예전 Code.gs, 이 기기 변경을 얹어서 탭 통째로 저장 */
+function planColl(c,snap,j,baseC,mode){
   const raw=j?j[c.sheet]:null;
   if(!Array.isArray(raw))return null;   // 시트에 탭이 없으면 그 탭은 건드리지 않음
   const del=c.del?readIdSet(c.del):new Set();
-  const remote=new Map();let dropped=0;
-  raw.forEach(r=>{
-    const o=c.from(r);if(!o||!c.ok(o))return;
-    const k=c.key(o);
-    if(del.has(k)){dropped++;return;}
-    remote.set(k,{o,s:rowSig(c,o)});
-  });
-  const result=new Map(remote);
+  const remote=new Map();
+  raw.forEach(r=>{const o=c.from(r);if(!usable(c,o))return;remote.set(c.key(o),{o,s:rowSig(c,o)});});
+  const result=new Map();let dropped=0;
+  remote.forEach((v,k)=>{if(del.has(k))dropped++;else result.set(k,v);});
+  if(mode!=="replace"){
+    const baseMap=new Map();remote.forEach((v,k)=>baseMap.set(k,v.s));   // 지운 기록이 있는데 시트에 남은 것도 기준에 넣어 다음 회차에 삭제 요청
+    return {c,snap,result,baseMap,needPost:false};
+  }
+  const before=new Map(result);
   pendingKeys(c,snap,baseC).forEach(k=>{
     if(del.has(k))return;
     const v=snap.get(k);
     if(v)result.set(k,v);else result.delete(k);
   });
-  let needPost=dropped>0||result.size!==remote.size;
-  if(!needPost)for(const [k,v] of result){const r=remote.get(k);if(!r||r.s!==v.s){needPost=true;break;}}
-  return {c,snap,result,needPost,rows:needPost?[...result.values()].map(v=>c.to(v.o)):null};
+  let needPost=dropped>0||result.size!==before.size;
+  if(!needPost)for(const [k,v] of result){const r=before.get(k);if(!r||r.s!==v.s){needPost=true;break;}}
+  const baseMap=new Map();result.forEach((v,k)=>baseMap.set(k,v.s));
+  return {c,snap,result,baseMap,needPost,rows:needPost?[...result.values()].map(v=>c.to(v.o)):null};
 }
 /* 시트 결과를 화면 데이터에 반영. 동기화 도중 새로 고친 것은 그대로 두고 다음 회차에 올린다. */
 function applyPlan(p,base){
   const {c,snap,result}=p;
   const now=snapshotOf(c);
-  const out=[],seen=new Set();let changed=false;
+  const out=[],seen=new Set();
+  let changed=(c.get()||[]).length!==now.size;   // 이 기기에 남아 있던 빈 일정은 여기서 정리됨
   now.forEach((cur,k)=>{
     const before=snap.get(k);
     if(!before||before.s!==cur.s){out.push(cur.o);seen.add(k);return;}
@@ -1086,16 +1148,14 @@ function applyPlan(p,base){
     out.push(v.o);changed=true;               // 다른 기기에서 새로 추가됨
   });
   if(changed){c.set(out);if(c.store)localStorage.setItem(c.store,JSON.stringify(c.get()));}
-  const nb={};result.forEach((v,k)=>{nb[k]=v.s;});
+  const nb={};p.baseMap.forEach((s,k)=>{nb[k]=s;});
   base[c.sheet]=nb;
-  const after=changed?snapshotOf(c):now;
-  let still=false;
-  for(const [k,v] of after){if(nb[k]!==v.s){still=true;break;}}
-  if(!still)for(const k in nb){if(!after.has(k)){still=true;break;}}
+  const still=pendingKeys(c,changed?snapshotOf(c):now,nb).size>0;
   if(still)markDirty(c.dirty);else clearDirty(c.dirty);
   return {changed,still};
 }
 
+let syncRoundSaving=false;
 let syncBusy=false,syncQueued=false,syncTimer=null,syncRetryTimer=null,syncFailCount=0,lastSyncOk=0;
 let _renderDeferred=false;
 function editingInView(){
@@ -1111,22 +1171,44 @@ async function syncOnce(){
   const base=loadSyncBase();
   const colls=SYNC_COLLS.filter(c=>!(c.skip&&c.skip()));
   const snaps=colls.map(snapshotOf);
-  const pending=colls.some((c,i)=>pendingKeys(c,snaps[i],base[c.sheet]).size>0);
-  setSync(pending?"saving":"loading");
-  const j=await fetchSheetJson();
-  const plans=colls.map((c,i)=>planColl(c,snaps[i],j,base[c.sheet])).filter(Boolean);
-  let failed=false;
-  for(const p of plans){            // 탭별로 하나씩 순서대로 저장
+  const pend=colls.map((c,i)=>pendingKeys(c,snaps[i],base[c.sheet]));
+  const anyPending=pend.some(p=>p.size>0);
+  let data=null,mode="pull",calendar="none";
+  syncRoundSaving=anyPending;
+  if(anyPending&&sheetApi!=="legacy"){
+    setSync("saving");
+    const changes={};
+    colls.forEach((c,i)=>{
+      if(!pend[i].size)return;
+      const del=c.del?readIdSet(c.del):new Set(),upsert=[],remove=[];
+      pend[i].forEach(k=>{
+        const v=snaps[i].get(k);
+        if(v){if(!del.has(k))upsert.push(c.to(v.o));}
+        else remove.push(c.idCell(k));
+      });
+      if(upsert.length||remove.length)changes[c.sheet]={upsert,remove};
+    });
+    const j=await postSync(changes);
+    if(j){data=j.data;calendar=j.calendar||"none";mode="sync";}
+  }
+  if(!data){
+    setSync(anyPending?"saving":"loading");
+    data=await fetchSheetJson();
+    mode=anyPending?"replace":"pull";
+  }
+  const plans=colls.map((c,i)=>planColl(c,snaps[i],data,base[c.sheet],mode)).filter(Boolean);
+  let failedAny=false;
+  for(const p of plans){            // 예전 Code.gs: 탭별로 하나씩 순서대로 저장
     if(!p.needPost)continue;
     setSync("saving");
-    try{await postSheetRows(p.c.sheet,p.rows);}catch(err){p.failed=true;failed=true;}
+    try{await postSheetRows(p.c.sheet,p.rows);}catch(err){p.failed=true;failedAny=true;}
   }
   let changed=false,again=false;
   plans.forEach(p=>{if(p.failed)return;const r=applyPlan(p,base);if(r.changed)changed=true;if(r.still)again=true;});
   saveSyncBase(base);
   if(changed||_renderDeferred)requestRender();
-  if(failed)throw new Error("저장 실패");
-  setSync("ok");
+  if(failedAny)throw new Error("저장 실패");
+  setSync(mode==="pull"?"ok":calendar==="queued"?"savedCal":"saved");
   return again;
 }
 async function runSync(){
@@ -1138,7 +1220,7 @@ async function runSync(){
     again=await syncOnce();
     syncFailCount=0;lastSyncOk=Date.now();
   }catch(err){
-    setSync("error");
+    setSync(syncRoundSaving?"errorSave":"errorLoad");
     syncFailCount++;
     const wait=Math.min(300000,30000*Math.pow(2,syncFailCount-1));   // 30초 → 1분 → 2분 … 최대 5분
     syncRetryTimer=setTimeout(runSync,wait);
