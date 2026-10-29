@@ -879,51 +879,6 @@ let syncState="";  // "", "loading", "saving", "ok", "error"
 function setSync(s){syncState=s;const el=document.getElementById("syncBadge");if(el)el.textContent=syncLabel();}
 function syncLabel(){return syncState==="loading"?"불러오는 중…":syncState==="saving"?"저장 중…":syncState==="ok"?"동기화됨":syncState==="error"?"동기화 실패(로컬 저장됨)":"";}
 
-async function fetchSheetJson(){
-  const res=await fetch(SHEET_API,{cache:"no-store"});
-  return await res.json();
-}
-async function postSheetRows(sheet,rows){
-  await fetch(SHEET_API,{method:"POST",
-    headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body:JSON.stringify({sheet:sheet,action:"replaceAll",rows:rows})});
-}
-async function mergedRowsFor(sheet,localItems,rowToObj,objToRow,deletedKey){
-  const validId=(id)=>{
-    const n=Number(id);
-    const s=String(id);
-    return isFinite(n)&&n>0&&n<=Number.MAX_SAFE_INTEGER&&s.indexOf("e")<0&&s.indexOf("E")<0;
-  };
-  try{
-    const j=await fetchSheetJson();
-    const remoteRows=Array.isArray(j?.[sheet])?j[sheet]:[];
-    const deleted=readIdSet(deletedKey);
-    const map=new Map();
-    remoteRows.map(rowToObj).forEach(obj=>{
-      if(obj&&validId(obj.id)&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
-    });
-    (localItems||[]).forEach(obj=>{
-      if(obj&&validId(obj.id)&&!deleted.has(String(obj.id)))map.set(String(obj.id),obj);
-    });
-    return [...map.values()].map(objToRow);
-  }catch(e){
-    return (localItems||[]).filter(obj=>obj&&validId(obj.id)&&notDeleted(deletedKey,obj)).map(objToRow);
-  }
-}
-async function mergedSiteRows(){
-  try{
-    const j=await fetchSheetJson();
-    const map=new Map();
-    if(Array.isArray(j?.현장)){
-      j.현장.map(rowToSite).forEach(s=>{if(s.name)map.set(s.name,siteToRow(s.name,s));});
-    }
-    Object.entries(SITE_INFO).forEach(([name,info])=>map.set(name,siteToRow(name,info)));
-    return [...map.values()];
-  }catch(e){
-    return Object.entries(SITE_INFO).map(([name,info])=>siteToRow(name,info));
-  }
-}
-
 // 시트 날짜/시간 → 로컬 변환 (getHours/getDate 사용: 브라우저 로컬타임 = KST)
 function normDate(v){
   if(!v)return"";
@@ -939,7 +894,7 @@ function normTime(v){
 }
 // 시트행(한글키) → 앱객체(영문키)
 function rowToEvent(r){
-  return {id:Number(r["일정ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+  return {id:Number(r["일정ID"])||stableId(r),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     site:String(r["현장명"]||""),desc:String(r["내용"]||""),kind:String(r["구분"]||"기타"),
     status:String(r["상태"]||"예정"),memo:String(r["메모"]||""),week:normDate(r["주간"])||null};
 }
@@ -959,7 +914,7 @@ function siteToRow(name,info){
 function rowToTodo(r){
   const subRaw=String(r["하위메모"]||"");
   const sub=subRaw?subRaw.split("|").filter(Boolean):[];
-  return {id:Number(r["할일ID"])||uid(),
+  return {id:Number(r["할일ID"])||stableId(r),
     text:String(r["내용"]||""),site:String(r["현장"]||""),sub:sub,
     desc:String(r["상세"]||""),memo:String(r["메모"]||""),
     kind:String(r["구분"]||"기타"),done:String(r["완료"]||"").toLowerCase()==="true",
@@ -984,7 +939,7 @@ function rowToWorker(r){
   let pay=r["일당"];
   if(typeof pay==="string")pay=Number(pay.replace(/[^\d.-]/g,""))||0;
   else pay=Number(pay)||0;
-  return {id:parseWorkerId(r["작업ID"])||uid(),date:normDate(r["날짜"]),time:normTime(r["시간"]),
+  return {id:parseWorkerId(r["작업ID"])||stableId(r),date:normDate(r["날짜"]),time:normTime(r["시간"]),
     worker:String(r["작업자"]||""),site:String(r["현장"]||""),kind:String(r["구분"]||"기타"),
     pay:pay,paid:String(r["지급여부"]||"미지급"),memo:String(r["메모"]||"")};
 }
@@ -993,100 +948,228 @@ function workerToRow(w){
     "구분":w.kind||"기타","일당":w.pay||0,"지급여부":w.paid||"미지급","메모":w.memo||""};
 }
 
-async function syncFromSheet(){
-  setSync("loading");
-  try{
-    const res=await fetch(SHEET_API);
-    const j=await res.json();
-    if(j.일정&&!isDirty(DIRTY_EVENTS)){
-      DATA=j.일정.map(rowToEvent).filter(x=>notDeleted(DEL_EVENTS,x));
-      localStorage.setItem(STORE,JSON.stringify(DATA));
-    }else if(isDirty(DIRTY_EVENTS)){pushToSheet();}
-    if(Array.isArray(j.현장)){
-      if(sitesDirty()){
-        pushSitesToSheet();
-      }else{
-        const next={};
-        j.현장.forEach(r=>{
-          const s=rowToSite(r);if(!s.name)return;
-          next[s.name]={customer:s.customer,note:s.note||"",hidden:s.hidden||false,aliases:s.aliases||[]};
-        });
-        replaceSiteInfo(next);
-        saveSitesLocal();
-        // SITE_ORDER도 시트에 없는 현장은 제거
-        const savedOrder=loadSiteOrder();
-        if(savedOrder){
-          const validNames=new Set(Object.keys(SITE_INFO));
-          const filtered=savedOrder.filter(n=>validNames.has(n));
-          saveSiteOrder(filtered);
-        }
-      }
-    }
-    if(j.할일&&!isDirty(DIRTY_TODOS)){
-      TODOS=j.할일.map(rowToTodo).filter(x=>notDeleted(DEL_TODOS,x));
-      localStorage.setItem(TODO_STORE,JSON.stringify(TODOS));
-    }else if(isDirty(DIRTY_TODOS)){pushTodosToSheet();}
-    if(!DEMO_WORKERS){
-      // 작업자는 시트를 항상 진실로 삼아 받아온다 (dirty가 박혀 있어도 화면엔 시트 기준 표시).
-      if(j.작업자){
-        WORKERS=j.작업자.map(rowToWorker).filter(x=>notDeleted(DEL_WORKERS,x));
-        localStorage.setItem(WORKER_STORE,JSON.stringify(WORKERS));
-      }
-      // 로컬에서 만든 변경분이 아직 안 올라갔으면 push (push 끝나면 dirty 해제됨)
-      if(isDirty(DIRTY_WORKERS)){pushWorkersToSheet();}
-    }
-    setSync("ok");render();
-  }catch(err){setSync("error");}
+/* ===== 동기화 엔진 =====
+ * 1) 동기화는 한 번에 하나만 돈다. 저장이 겹치면 끝난 뒤 한 번 더 돈다.
+ *    (예전: 탭마다 따로, 동시에 돌아서 늦게 도착한 옛 데이터가 새 데이터를 덮을 수 있었음)
+ * 2) 시트 전체는 1회에 한 번만 읽고, 실제로 내용이 바뀐 탭만 다시 쓴다.
+ *    (예전: 저장할 때마다 탭별로 시트 전체를 읽고 탭 전체를 다시 씀)
+ * 3) 이 기기에서 고친 항목만 시트 위에 덮어쓴다. 다른 기기에서 고친 항목은 건드리지 않는다.
+ *    기준 = 마지막으로 시트와 맞춘 상태(SYNC_BASE_STORE, 행마다 짧은 지문만 저장)
+ *    (예전: 이 기기에 있는 전체 목록으로 덮어써서, 오래 켜둔 기기가 다른 기기의 수정·삭제를 되돌렸음)
+ * 4) 저장 응답을 확인한다. 실패하면 '동기화 실패'로 남기고 잠시 뒤 다시 시도한다.
+ *    (예전: 실패해도 '동기화됨'으로 표시되고, 다음 실행 때 시트 내용으로 덮여 수정이 사라졌음)
+ * 5) 앱으로 돌아오면(화면 켜짐·창 포커스·인터넷 재연결) 시트에서 새로 받아온다.
+ */
+const SYNC_BASE_STORE="smh_sync_base_v1";
+function validId(id){
+  const n=Number(id),s=String(id);
+  return isFinite(n)&&n>0&&n<=Number.MAX_SAFE_INTEGER&&s.indexOf("e")<0&&s.indexOf("E")<0;
+}
+/* 문자열 → 숫자 지문 (같은 내용이면 항상 같은 값) */
+function sig(str){
+  let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return 4294967296*(2097151&h2)+(h1>>>0);
+}
+/* 시트에서 ID 칸이 비어 있는 행: 읽을 때마다 같은 ID가 나오게 한다 (매번 새 ID → 중복 행 생기던 문제) */
+function stableId(r){return sig(JSON.stringify(r||{}))||1;}
+
+function sheetFetch(opts,ms){
+  const ctl=typeof AbortController!=="undefined"?new AbortController():null;
+  const t=ctl?setTimeout(()=>ctl.abort(),ms):null;
+  return fetch(SHEET_API,Object.assign({cache:"no-store"},ctl?{signal:ctl.signal}:{},opts||{}))
+    .finally(()=>{if(t)clearTimeout(t);});
+}
+async function fetchSheetJson(){
+  const res=await sheetFetch({},30000);
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const j=await res.json();
+  if(!j||typeof j!=="object"||j.error)throw new Error("시트 응답 오류");
+  return j;
+}
+async function postSheetRows(sheet,rows){
+  const res=await sheetFetch({method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({sheet:sheet,action:"replaceAll",rows:rows})},90000);
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const text=await res.text();
+  let j=null;try{j=JSON.parse(text);}catch(e){}
+  if(j&&typeof j==="object"){
+    if(j.error||j.ok===false||j.success===false||/^(error|fail)/i.test(String(j.status||j.result||"")))
+      throw new Error(String(j.error||j.message||"저장 실패"));
+  }else if(/<html|<!doctype/i.test(text)){
+    throw new Error("Apps Script 오류 페이지");   // 스크립트 오류는 200 + HTML로 돌아온다
+  }
+  return j;
 }
 
-let pushTimer=null;
-function pushToSheet(){
-  if(pushTimer)clearTimeout(pushTimer);
-  pushTimer=setTimeout(async()=>{
+function pruneSiteOrder(){
+  const savedOrder=loadSiteOrder();
+  if(!savedOrder)return;
+  const validNames=new Set(Object.keys(SITE_INFO));
+  saveSiteOrder(savedOrder.filter(n=>validNames.has(n)));
+}
+const SYNC_COLLS=[
+  {sheet:"일정",dirty:DIRTY_EVENTS,del:DEL_EVENTS,store:STORE,
+    get:()=>DATA,set:v=>{DATA=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    from:r=>rowToEvent(r),to:o=>eventToRow(o)},
+  {sheet:"할일",dirty:DIRTY_TODOS,del:DEL_TODOS,store:TODO_STORE,
+    get:()=>TODOS,set:v=>{TODOS=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    from:r=>rowToTodo(r),to:o=>todoToRow(o)},
+  {sheet:"작업자",dirty:DIRTY_WORKERS,del:DEL_WORKERS,store:WORKER_STORE,skip:()=>DEMO_WORKERS,
+    get:()=>WORKERS,set:v=>{WORKERS=v;},key:o=>String(o.id),ok:o=>validId(o.id),
+    from:r=>rowToWorker(r),to:o=>workerToRow(o)},
+  {sheet:"현장",dirty:SITE_DIRTY_STORE,del:null,store:null,
+    get:()=>Object.entries(SITE_INFO).map(([name,info])=>Object.assign({},info,{name})),
+    set:list=>{const o={};list.forEach(s=>{o[s.name]=s;});replaceSiteInfo(o);saveSitesLocal();pruneSiteOrder();},
+    key:o=>o.name,ok:o=>!!(o&&o.name),
+    from:r=>rowToSite(r),to:o=>siteToRow(o.name,o)}
+];
+function loadSyncBase(){try{return JSON.parse(localStorage.getItem(SYNC_BASE_STORE)||"{}")||{};}catch(e){return {};}}
+function saveSyncBase(b){try{localStorage.setItem(SYNC_BASE_STORE,JSON.stringify(b));}catch(e){}}
+function rowSig(c,o){return sig(JSON.stringify(c.to(o)));}
+function snapshotOf(c){
+  const m=new Map();
+  (c.get()||[]).forEach(o=>{if(o&&c.ok(o))m.set(c.key(o),{o,s:rowSig(c,o)});});
+  return m;
+}
+/* 이 기기에서 바뀐 항목(추가·수정·삭제)의 키 */
+function pendingKeys(c,snap,baseC){
+  const keys=new Set();
+  if(!baseC){   // 이 버전으로 처음 동기화: 예전 방식의 '변경 있음' 표시를 그대로 따른다
+    if(isDirty(c.dirty))snap.forEach((v,k)=>keys.add(k));
+    return keys;
+  }
+  snap.forEach((v,k)=>{if(baseC[k]!==v.s)keys.add(k);});
+  Object.keys(baseC).forEach(k=>{if(!snap.has(k))keys.add(k);});
+  return keys;
+}
+function planColl(c,snap,j,baseC){
+  const raw=j?j[c.sheet]:null;
+  if(!Array.isArray(raw))return null;   // 시트에 탭이 없으면 그 탭은 건드리지 않음
+  const del=c.del?readIdSet(c.del):new Set();
+  const remote=new Map();let dropped=0;
+  raw.forEach(r=>{
+    const o=c.from(r);if(!o||!c.ok(o))return;
+    const k=c.key(o);
+    if(del.has(k)){dropped++;return;}
+    remote.set(k,{o,s:rowSig(c,o)});
+  });
+  const result=new Map(remote);
+  pendingKeys(c,snap,baseC).forEach(k=>{
+    if(del.has(k))return;
+    const v=snap.get(k);
+    if(v)result.set(k,v);else result.delete(k);
+  });
+  let needPost=dropped>0||result.size!==remote.size;
+  if(!needPost)for(const [k,v] of result){const r=remote.get(k);if(!r||r.s!==v.s){needPost=true;break;}}
+  return {c,snap,result,needPost,rows:needPost?[...result.values()].map(v=>c.to(v.o)):null};
+}
+/* 시트 결과를 화면 데이터에 반영. 동기화 도중 새로 고친 것은 그대로 두고 다음 회차에 올린다. */
+function applyPlan(p,base){
+  const {c,snap,result}=p;
+  const now=snapshotOf(c);
+  const out=[],seen=new Set();let changed=false;
+  now.forEach((cur,k)=>{
+    const before=snap.get(k);
+    if(!before||before.s!==cur.s){out.push(cur.o);seen.add(k);return;}
+    const v=result.get(k);
+    if(!v){changed=true;return;}            // 다른 기기에서 삭제됨
+    seen.add(k);
+    if(v.s===cur.s)out.push(cur.o);else{out.push(v.o);changed=true;}
+  });
+  result.forEach((v,k)=>{
+    if(seen.has(k))return;
+    if(snap.has(k)&&!now.has(k))return;      // 동기화 도중 이 기기에서 삭제함
+    out.push(v.o);changed=true;               // 다른 기기에서 새로 추가됨
+  });
+  if(changed){c.set(out);if(c.store)localStorage.setItem(c.store,JSON.stringify(c.get()));}
+  const nb={};result.forEach((v,k)=>{nb[k]=v.s;});
+  base[c.sheet]=nb;
+  const after=changed?snapshotOf(c):now;
+  let still=false;
+  for(const [k,v] of after){if(nb[k]!==v.s){still=true;break;}}
+  if(!still)for(const k in nb){if(!after.has(k)){still=true;break;}}
+  if(still)markDirty(c.dirty);else clearDirty(c.dirty);
+  return {changed,still};
+}
+
+let syncBusy=false,syncQueued=false,syncTimer=null,syncRetryTimer=null,syncFailCount=0,lastSyncOk=0;
+let _renderDeferred=false;
+function editingInView(){
+  const a=document.activeElement;
+  return !!(a&&a!==document.body&&V.contains(a)&&(a.matches("input,textarea,select")||a.isContentEditable));
+}
+/* 입력 중이면 화면을 다시 그리지 않는다 (현장 노트·검색창 입력이 끊기지 않게) */
+function requestRender(){
+  if(editingInView()){_renderDeferred=true;return;}
+  _renderDeferred=false;render();
+}
+async function syncOnce(){
+  const base=loadSyncBase();
+  const colls=SYNC_COLLS.filter(c=>!(c.skip&&c.skip()));
+  const snaps=colls.map(snapshotOf);
+  const pending=colls.some((c,i)=>pendingKeys(c,snaps[i],base[c.sheet]).size>0);
+  setSync(pending?"saving":"loading");
+  const j=await fetchSheetJson();
+  const plans=colls.map((c,i)=>planColl(c,snaps[i],j,base[c.sheet])).filter(Boolean);
+  let failed=false;
+  for(const p of plans){            // 탭별로 하나씩 순서대로 저장
+    if(!p.needPost)continue;
     setSync("saving");
-    try{
-      const rows=await mergedRowsFor("일정",DATA,rowToEvent,eventToRow,DEL_EVENTS);
-      await postSheetRows("일정",rows);
-      clearDirty(DIRTY_EVENTS);
-      setSync("ok");
-    }catch(err){setSync("error");}
-  },800);
+    try{await postSheetRows(p.c.sheet,p.rows);}catch(err){p.failed=true;failed=true;}
+  }
+  let changed=false,again=false;
+  plans.forEach(p=>{if(p.failed)return;const r=applyPlan(p,base);if(r.changed)changed=true;if(r.still)again=true;});
+  saveSyncBase(base);
+  if(changed||_renderDeferred)requestRender();
+  if(failed)throw new Error("저장 실패");
+  setSync("ok");
+  return again;
 }
+async function runSync(){
+  if(syncBusy){syncQueued=true;return;}
+  syncBusy=true;syncQueued=false;
+  clearTimeout(syncRetryTimer);syncRetryTimer=null;
+  let again=false;
+  try{
+    again=await syncOnce();
+    syncFailCount=0;lastSyncOk=Date.now();
+  }catch(err){
+    setSync("error");
+    syncFailCount++;
+    const wait=Math.min(300000,30000*Math.pow(2,syncFailCount-1));   // 30초 → 1분 → 2분 … 최대 5분
+    syncRetryTimer=setTimeout(runSync,wait);
+  }finally{
+    syncBusy=false;
+  }
+  if(syncQueued||again)scheduleSync(800);
+}
+function scheduleSync(delay){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(runSync,delay==null?800:delay);
+}
+/* 예전 이름 그대로 유지 (save·saveTodos·saveWorkers·saveSites가 호출) */
+function syncFromSheet(){scheduleSync(0);}
+function pushToSheet(){scheduleSync();}
+function pushTodosToSheet(){scheduleSync();}
+function pushWorkersToSheet(){scheduleSync();}
+function pushSitesToSheet(){scheduleSync();}
 
-let todosPushTimer=null;
-function pushTodosToSheet(){
-  if(todosPushTimer)clearTimeout(todosPushTimer);
-  todosPushTimer=setTimeout(async()=>{
-    try{
-      const rows=await mergedRowsFor("할일",TODOS,rowToTodo,todoToRow,DEL_TODOS);
-      await postSheetRows("할일",rows);
-      clearDirty(DIRTY_TODOS);
-    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
-  },800);
+function syncIfStale(){
+  if(document.hidden)return;
+  if(Date.now()-lastSyncOk<15000)return;
+  scheduleSync(0);
 }
-
-let workersPushTimer=null;
-function pushWorkersToSheet(){
-  if(workersPushTimer)clearTimeout(workersPushTimer);
-  workersPushTimer=setTimeout(async()=>{
-    try{
-      const rows=await mergedRowsFor("작업자",WORKERS,rowToWorker,workerToRow,DEL_WORKERS);
-      await postSheetRows("작업자",rows);
-      clearDirty(DIRTY_WORKERS);
-    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
-  },800);
-}
-let sitesPushTimer=null;
-function pushSitesToSheet(){
-  if(sitesPushTimer)clearTimeout(sitesPushTimer);
-  sitesPushTimer=setTimeout(async()=>{
-    try{
-      const rows=await mergedSiteRows();
-      await postSheetRows("현장",rows);
-      clearSitesDirty();
-    }catch(err){/* 로컬 저장됨, 다음 실행 때 다시 동기화 */}
-  },800);
-}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)return;
+  syncIfStale();
+  if(_renderDeferred)requestRender();
+});
+window.addEventListener("focus",syncIfStale);
+window.addEventListener("online",()=>scheduleSync(0));
 function saveNote(el){
   const name=el.dataset.site;
   if(!SITE_INFO[name])SITE_INFO[name]={customer:"",note:"",hidden:false};
@@ -2568,8 +2651,10 @@ function mergeSiteInto(name,target){const src=SITE_INFO[name],dst=SITE_INFO[targ
   if(src.note&&src.note.trim()&&!String(dst.note||'').includes(src.note.trim()))dst.note=(dst.note?dst.note+'\n':'')+src.note;
   if(!dst.customer&&src.customer)dst.customer=src.customer;
   src.hidden=true;src.aliases=[];v3SiteOpen.delete(name);saveSites();render();}
+/* 접힌 현장 카드의 내용은 펼칠 때 그린다 (현장 탭·검색이 무겁던 원인: 안 보이는 행 수천 개를 매번 새로 만듦) */
+const _custLazy=new Map();
 renderCust=function(){
-  const map=siteKeyMap(),q=custQuery.toLowerCase().trim(),wasLooseOpen=!!V.querySelector('details.loose[open]');
+  _custLazy.clear();const map=siteKeyMap(),q=custQuery.toLowerCase().trim(),wasLooseOpen=!!V.querySelector('details.loose[open]');
   const bucket=()=>({evs:[],todos:[],workers:[]}),groups=new Map(),loose=new Map();
   const put=(item,type)=>{const raw=String(item.site||'').trim();if(!raw)return;const s=resolveSite(raw,map);
     if(s){if(!groups.has(s))groups.set(s,bucket());groups.get(s)[type].push(item);return;}
@@ -2585,7 +2670,8 @@ renderCust=function(){
     const unpaid=workers.filter(w=>w.paid!=='지급완료'&&Number(w.pay)>0).reduce((s,w)=>s+Number(w.pay),0),next=upcoming[0],latest=scheduled[scheduled.length-1],pending=todos.filter(t=>!t.done);
     const sub=[info.customer,next?'다음: '+rangeText(next)+' '+(next.desc||next.kind):latest?'최근: '+recentText(latest):'일정 없음',notes.length?'메모 '+notes.length:'',pending.length?'할일 '+pending.length:''].filter(Boolean).join(' · ');
     const actions=info.hidden?`<span class="cust-chevron">▾</span>`:`<button class="site-move" data-dir="up" data-site="${esc(name)}"${index===0?' disabled':''}>▲</button><button class="site-move" data-dir="down" data-site="${esc(name)}"${index===order.length-1?' disabled':''}>▼</button><button class="site-hide" data-site="${esc(name)}" title="숨기기">🗑</button><span class="cust-chevron">▾</span>`;
-    html+=`<div class="cust${open?' open':''}" id="cust-${cssid(name)}"><div class="cust-header" data-cust="${esc(name)}"><div class="cust-info"><div class="cust-name">${esc(name)}${info.hidden?' <span style="font-size:11px;color:var(--ink3);font-weight:400">(숨김)</span>':''}</div><div class="cust-sub">${esc(sub)}</div></div><div class="cust-actions">${actions}</div></div><div class="cust-body${open?' open':''}" id="cb-${cssid(name)}"><div class="site-note-wrap"><textarea class="site-note" data-site="${esc(name)}" oninput="saveNote(this)" placeholder="현장 노트 (자동저장)">${esc(info.note||'')}</textarea></div>`;
+    html+=`<div class="cust${open?' open':''}" id="cust-${cssid(name)}"><div class="cust-header" data-cust="${esc(name)}"><div class="cust-info"><div class="cust-name">${esc(name)}${info.hidden?' <span style="font-size:11px;color:var(--ink3);font-weight:400">(숨김)</span>':''}</div><div class="cust-sub">${esc(sub)}</div></div><div class="cust-actions">${actions}</div></div><div class="cust-body${open?' open':''}" id="cb-${cssid(name)}">`;
+    const body=()=>{let html=`<div class="site-note-wrap"><textarea class="site-note" data-site="${esc(name)}" oninput="saveNote(this)" placeholder="현장 노트 (자동저장)">${esc((SITE_INFO[name]||info).note||'')}</textarea></div>`;
     html+=info.hidden?`<div class="site-shortcuts"><button class="btn" data-unhide="${esc(name)}">숨김 해제</button></div>`:`<div class="site-shortcuts"><button class="btn" data-site-add="${esc(name)}">＋ 일정</button><button class="btn" data-site-memo="${esc(name)}">＋ 이번 주 메모</button>${order.length>1?`<select class="site-merge" data-merge-site="${esc(name)}"><option value="">다른 현장에 합치기</option>${order.filter(n=>n!==name).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select>`:''}</div>`;
     if(aliases.length)html+=`<div class="site-alias">같은 현장으로 보는 이름 ${aliases.map(a=>`<span class="alias-chip">${esc(a)}<button data-unalias="${esc(a)}" data-site="${esc(name)}" aria-label="${esc(a)} 별칭 빼기">✕</button></span>`).join('')}</div>`;
     if(notes.length)html+=`<div class="site-section">주간 메모 · ${notes.length}</div>`+notes.map(e=>`<div class="site-row" data-id="${e.id}"><span class="site-meta">${weekTitle(memoWeek(e))}</span><span class="site-text">${esc(e.desc||e.site)} ${kindTag(e)}${timingNotes(e)?`<div class="status-note">${esc(timingNotes(e))}</div>`:''}</span></div>`).join('');
@@ -2594,6 +2680,8 @@ renderCust=function(){
     if(upcoming.length)html+=`<div class="site-section">예정·진행 중 일정 · ${upcoming.length}</div>`+upcoming.map(eventRow).join('');
     if(past.length)html+=`<details style="margin-top:7px"><summary class="site-section" style="cursor:pointer">지난 일정·완료 ${past.length}개</summary>${past.reverse().map(eventRow).join('')}</details>`;
     if(workers.length)html+=`<div class="site-section">작업자 · ${workers.length}건${unpaid?' · 미지급 '+fmtWon(unpaid)+'원':''}</div>`+workers.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(w=>`<div class="site-row" data-wid="${w.id}"><span class="site-meta">${shortDate(w.date)}</span><span class="site-text">${esc(w.worker)} · ${esc(w.kind)}<div class="status-note">${w.pay?fmtWon(w.pay)+'원 · '+esc(w.paid):'일당 미정'}</div></span></div>`).join('');
+    return html;};
+    if(open)html+=body();else _custLazy.set(name,body);
     html+='</div></div>';
   });
   const size=g=>g.evs.length+g.todos.length+g.workers.length;
@@ -2616,7 +2704,7 @@ V.addEventListener('click',e=>{
   const ua=e.target.closest('[data-unalias]');if(ua){e.stopImmediatePropagation();const s=SITE_INFO[ua.dataset.site],a=ua.dataset.unalias;if(!s)return;s.aliases=siteAliases(s).filter(x=>x!==a);if(SITE_INFO[a]&&SITE_INFO[a].hidden)SITE_INFO[a].hidden=false;saveSites();render();return;}
   const uh=e.target.closest('[data-unhide]');if(uh){e.stopImmediatePropagation();const s=SITE_INFO[uh.dataset.unhide];if(s){s.hidden=false;saveSites();render();}return;}
   if(e.target.closest('select'))return;
-  const header=e.target.closest('[data-cust]');if(header&&!e.target.closest('button')){const name=header.dataset.cust;if(v3SiteOpen.has(name))v3SiteOpen.delete(name);else v3SiteOpen.add(name);}
+  const header=e.target.closest('[data-cust]');if(header&&!e.target.closest('button')){const name=header.dataset.cust;if(v3SiteOpen.has(name))v3SiteOpen.delete(name);else{v3SiteOpen.add(name);const lz=_custLazy.get(name),cb=document.getElementById('cb-'+cssid(name));if(lz&&cb&&!cb.firstChild){cb.innerHTML=lz();_custLazy.delete(name);}}}
 },true);
 V.addEventListener('change',e=>{
   const ms=e.target.closest('[data-merge-select]');if(ms&&ms.value){addAlias(ms.value,ms.dataset.mergeSelect);saveSites();render();return;}
@@ -2651,6 +2739,32 @@ render=function(){oldRender();if(view==='cust')v3el('bottomhint').textContent='�
 let v3LastDay=todayStr();
 function refreshAfterMidnight(){const now=todayStr();if(now===v3LastDay||anyOverlayOpen())return;if(wkKey(cur)===wkKey(new Date(v3LastDay+'T12:00:00')))cur=new Date();v3LastDay=now;render();}
 window.addEventListener('focus',refreshAfterMidnight);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAfterMidnight();});setInterval(refreshAfterMidnight,60000);
+
+/* ===== 화면 그리기 속도 =====
+ * 색 계산(kindCatalog)이 일정 하나 그릴 때마다 전체 일정·할일을 다시 훑고 있어서
+ * 현장 탭·현장 검색이 느렸다. 한 번 그리는 동안에는 한 번만 계산하고,
+ * 같은 색의 배경·글자색은 한 번 계산한 값을 다시 쓴다. 결과 화면은 그대로.
+ */
+let _colorCacheDepth=0,_kindCatalogCache=null;
+const _kindCatalogRaw=kindCatalog;
+kindCatalog=function(){
+  if(_colorCacheDepth>0)return _kindCatalogCache||(_kindCatalogCache=_kindCatalogRaw());
+  return _kindCatalogRaw();
+};
+function withColorCache(fn){
+  return function(){
+    _colorCacheDepth++;
+    try{return fn.apply(this,arguments);}
+    finally{if(--_colorCacheDepth===0)_kindCatalogCache=null;}
+  };
+}
+function memoByHex(fn){const m=new Map();return h=>{let v=m.get(h);if(v===undefined){v=fn(h);m.set(h,v);}return v;};}
+tint=memoByHex(tint);
+inkFor=memoByHex(inkFor);
+renderCust=withColorCache(renderCust);
+/* 앱이 직접 화면을 다시 그리면, 동기화가 미뤄둔 다시 그리기는 필요 없음 */
+const _renderBeforeSync=withColorCache(render);
+render=function(){_renderDeferred=false;return _renderBeforeSync.apply(this,arguments);};
 
 render();
 syncFromSheet();
