@@ -1431,7 +1431,7 @@ function render(){
     view==="timetable"?ttHint():
     view==="cust"?"검색하거나, 상세 일정 보기를 눌러 관련 일정을 펼칠 수 있어요":
     view==="todo"?"체크하면 완료 · 날짜 잡기를 누르면 일정(달력)으로 올라갑니다":
-    view==="worker"?"달력은 날짜 추가 · 리스트는 작업 메모 · 정산은 현장별 금액 확인":
+    view==="worker"?"달력은 날짜를 눌러 작업 추가 · 리스트는 오늘 이후 작업":
     view==="schedule"&&scheduleView==="today"?"체크 버튼으로 바로 완료 처리할 수 있어요":
     view==="schedule"&&scheduleView==="board"?"날짜 칸을 누르면 그날 일정 추가 · 일정을 누르면 수정":
     "날짜를 누르면 일정 추가 · 일정을 누르면 수정";
@@ -3373,7 +3373,7 @@ function siteDot(c){return `<span class="site-dot" style="background:${c}"></spa
 /* 탭 안의 전환 줄 */
 function siteToggleHTML(){
   const cur=view==='cust'?'cust':workerView;
-  return `<div class="vtoggle site-toggle" style="margin:4px 0 12px">${[['cust','현장'],['cal','달력'],['list','리스트'],['site','정산']].map(([k,l])=>`<button data-sitesub="${k}" class="${cur===k?'on':''}">${l}</button>`).join('')}</div>`;
+  return `<div class="vtoggle site-toggle" style="margin:4px 0 12px">${[['cust','현장'],['cal','달력'],['list','리스트']].map(([k,l])=>`<button data-sitesub="${k}" class="${cur===k?'on':''}">${l}</button>`).join('')}</div>`;
 }
 const _renderCustSite=renderCust;
 renderCust=function(){
@@ -3385,15 +3385,25 @@ renderCust=function(){
     const h=card.querySelector('[data-cust]');if(!h)return;const n=h.dataset.cust,i=SITE_INFO[n];if(!i||i.hidden)return;
     card.style.borderLeft=`4px solid ${i.color||SITE_NONE}`;
     const body=card.querySelector('.cust-body');
-    if(body&&!body.querySelector('.site-colors'))body.insertAdjacentHTML('afterbegin',siteColorRow(n));
+    if(body&&body.firstChild&&!body.querySelector('.site-colors'))body.insertAdjacentHTML('afterbegin',siteColorRow(n));   // 펼쳐진 카드만
   });
+  // 접힌 카드는 펼칠 때 내용을 그린다(빈 카드일 때만). 빈 카드에 미리 뭔가 넣으면 내용이 안 그려지므로 그릴 때 같이 넣는다
+  [..._custLazy.entries()].forEach(([n,fn])=>{if(SITE_INFO[n]&&!SITE_INFO[n].hidden)_custLazy.set(n,()=>siteColorRow(n)+fn());});
 };
 function siteColorRow(n){const c=SITE_INFO[n].color;return `<div class="site-colors"><span>현장 색</span>${SITE_COLORS.map(x=>`<button type="button" class="color-swatch${x===c?' on':''}" style="background:${x}" data-sitecolor="${x}" data-site="${esc(n)}" aria-label="현장 색"></button>`).join('')}</div>`;}
 const _renderWorkerSite=renderWorker;
 renderWorker=function(){
   ensureSiteColors();
+  if(workerView!=='list'&&workerView!=='cal')workerView='cal';   // 정산(현장별) 화면은 뺐음
   _renderWorkerSite();
   const old=V.querySelector('.vtoggle');if(old)old.outerHTML=siteToggleHTML();
+  if(workerView==='list'){   // 리스트: 달 단위가 아니라 오늘부터 앞으로의 작업만
+    const nav=V.querySelector('.nav');if(nav)nav.remove();
+    const today=todayStr(),rows=WORKERS.filter(w=>w.date&&w.date>=today);
+    const box=V.querySelector('.wk-list,.empty');
+    const html=rows.length?workerListHTML(rows):'<div class="empty">오늘 이후 잡힌 작업이 없습니다</div>';
+    if(box)box.outerHTML=html;else V.insertAdjacentHTML('beforeend',html);
+  }
   // 현장 색 입히기: 달력 칸·리스트·정산
   if(workerView==='cal')V.querySelectorAll('[data-wdate]').forEach(cell=>{
     const rows=wkOf(cell.dataset.wdate);cell.querySelectorAll('.ev').forEach((ev,i)=>{const w=rows[i];if(!w)return;const c=siteColorOf(w.site);ev.className='ev wk-site'+(w.paid==='지급완료'?' done':'');ev.style.cssText=`background:${tint(c)};color:${inkFor(c)};border-left:3px solid ${c}`;ev.title=(w.worker||'')+' · '+(w.site||'현장 미정');});
